@@ -1,0 +1,45 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "Build Server",
+            "command": "D:\\environment\\winlibs-x86_64-posix-seh-gcc-14.2.0-mingw-w64msvcrt-12.0.0-r3\\mingw64\\bin\\g++.exe",
+            "args": [
+                "-g", // 启用调试符号
+                "-O0", // 禁用优化
+                "server.cpp", // 源文件
+                "-o", "server.exe", // 输出文件
+                "-lws2_32" // 链接 Winsock 库
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "用于编译 server.cpp 的任务"
+        },
+        {
+            "type": "shell",
+            "label": "Build Client",
+            "command": "D:\\environment\\winlibs-x86_64-posix-seh-gcc-14.2.0-mingw-w64msvcrt-12.0.0-r3\\mingw64\\bin\\g++.exe",
+            "args": [
+                "-g", // 启用调试符号
+                "-O0", // 禁用优化
+                "client.cpp", // 源文件
+                "-o", "client.exe", // 输出文件
+                "-lws2_32" // 链接 Winsock 库
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "用于编译 client.cpp 的任务"
+        }
+    ]
+}
