@@ -8,8 +8,9 @@
             "args": [
                 "-g", // 启用调试符号
                 "-O0", // 禁用优化
-                "server.cpp", // 源文件
-                "-o", "server.exe", // 输出文件
+                "-I", "${workspaceFolder}/inc", // 添加头文件目录
+                "${workspaceFolder}/src/server.cpp", // 源文件
+                "-o", "${workspaceFolder}/server.exe", // 输出文件
                 "-lws2_32" // 链接 Winsock 库
             ],
             "group": {
@@ -19,7 +20,7 @@
             "problemMatcher": [
                 "$gcc"
             ],
-            "detail": "用于编译 server.cpp 的任务"
+            "detail": "用于编译 src/server.cpp 的任务"
         },
         {
             "type": "shell",
@@ -28,8 +29,9 @@
             "args": [
                 "-g", // 启用调试符号
                 "-O0", // 禁用优化
-                "client.cpp", // 源文件
-                "-o", "client.exe", // 输出文件
+                "-I", "${workspaceFolder}/inc", // 添加头文件目录
+                "${workspaceFolder}/src/client.cpp", // 源文件
+                "-o", "${workspaceFolder}/client.exe", // 输出文件
                 "-lws2_32" // 链接 Winsock 库
             ],
             "group": {
@@ -39,7 +41,7 @@
             "problemMatcher": [
                 "$gcc"
             ],
-            "detail": "用于编译 client.cpp 的任务"
+            "detail": "用于编译 src/client.cpp 的任务"
         }
     ]
 }

@@ -1,42 +1,19 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 
-#include <winsock2.h>
-#include <iostream>
-#include <string>
-#include <thread>
-#include <map>
-#include <set>
-#include <mutex>
-#include <vector>
-#include <chrono>
-#include <iomanip>
-#include <ctime>
-#include <fstream>
-#include <exception>
+#include "server.h"
+
+// 定义全局变量
+std::map<std::string, std::set<std::string>> group_members;
+std::map<std::string, std::string> group_owners;
+std::map<std::string, ClientInfo> clients;
+std::mutex client_mutex;
+std::ofstream chatlog;
+
 
 #pragma comment(lib, "ws2_32.lib")
 using namespace std;
 
-#define XOR_KEY 0xAB
-#define MAX_CLIENTS 100
-#define INACTIVITY_TIMEOUT 300 // 5 minutes in seconds
-
-struct ClientInfo
-{
-    SOCKET socket;
-    string username;
-    string group;
-    bool muted = false;
-    time_t last_activity;
-};
-
-map<string, set<string>> group_members;
-map<string, string> group_owners;
-// 当前连接的用户列表
-map<string, ClientInfo> clients;
-mutex client_mutex;
-ofstream chatlog;
 
 string xorCipher(const string &data)
 {

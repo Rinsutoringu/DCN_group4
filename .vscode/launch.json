@@ -19,7 +19,7 @@
           "ignoreFailures": true
         }
       ],
-      "preLaunchTask": "Build Server" // 自动编译服务器
+      "preLaunchTask": "Build Server"
     },
     {
       "name": "Debug Client",
@@ -39,7 +39,7 @@
           "ignoreFailures": true
         }
       ],
-      "preLaunchTask": "Build Client" // 自动编译客户端
+      "preLaunchTask": "Build Client"
     }
   ]
 }
