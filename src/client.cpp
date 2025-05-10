@@ -83,12 +83,12 @@ void ChatClient::receiveMessage() {
             lock_guard<mutex> lock(cout_mutex);
             cout << msg << endl;
             
-            // 检查是否收到 CMD_KICK 消息
             if (msg.find("CMD_KICK:") != string::npos) {
-                cout << "You have been kicked from the group. Use /join <group_name> to join another group or /create <group_name> to create a new group." << endl;
-                continue; // 不退出程序，仅提示用户
+                cout << "You are kicked.\nEnter command (/create, /join): ";
+            } else {
+                cout << "Enter a message: ";
             }
-            
+            cout.flush();
         }
         else if (msg_len == 0) {
             lock_guard<mutex> lock(cout_mutex);

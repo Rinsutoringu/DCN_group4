@@ -14,7 +14,7 @@ std::ofstream chatlog;
 #pragma comment(lib, "ws2_32.lib")
 using namespace std;
 
-
+// XOR加密函数
 string xorCipher(const string &data)
 {
     string res = data;
@@ -23,6 +23,11 @@ string xorCipher(const string &data)
     return res;
 }
 
+
+/**
+ * 获取当前时间戳
+ * @return 当前时间戳字符串
+ */
 string getTimestamp()
 {
     auto now = chrono::system_clock::now();
@@ -34,31 +39,44 @@ string getTimestamp()
     return oss.str();
 }
 
+/**
+ * 发送信息到客户端
+ * @param sock 客户端socket
+ * @param msg 发送的消息
+ */
 void sendToClient(SOCKET sock, const string &msg)
 {
     string encrypted = xorCipher(msg);
     send(sock, encrypted.c_str(), encrypted.size(), 0);
 }
 
+/**
+ * 广播消息到所有客户端
+ * @param group 群组名称
+ * @param msg 发送的消息
+ * @param except 排除的用户
+ */
 void broadcast(const string &group, const string &msg, const string &except = "")
 {
+    // 进程锁
     lock_guard<mutex> lock(client_mutex);
-    if (group_members.find(group) == group_members.end())
-        return;
-
+    if (group_members.find(group) == group_members.end()) return;
+    // msg字符串
     string timestamped_msg = getTimestamp() + " " + msg;
-    chatlog << timestamped_msg << endl; // Log to file
+
+    chatlog << timestamped_msg << endl; 
     printf("receive %s\n", timestamped_msg.c_str());
     
-
     for (const auto &username : group_members[group])
     {
-        if (username == except)
-            continue;
+        if (username == except) continue;
         sendToClient(clients[username].socket, timestamped_msg);
     }
 }
 
+/**
+ * 检查不活跃的用户
+ */
 void checkInactiveUsers()
 {
     while (true)
@@ -67,41 +85,43 @@ void checkInactiveUsers()
 
         lock_guard<mutex> lock(client_mutex);
         time_t now = time(nullptr);
+        // 待移除用户
         vector<string> to_remove;
-
+        
         for (auto &[username, client] : clients)
         {
-            if (difftime(now, client.last_activity) > INACTIVITY_TIMEOUT)
-            {
-                cout << "User " << username << " timed out due to inactivity." << endl;
-                to_remove.push_back(username);
-                closesocket(client.socket);
-            }
+            if (!difftime(now, client.last_activity) > INACTIVITY_TIMEOUT) continue;
+
+            cout << "User " << username << " timed out due to inactivity." << endl;
+            to_remove.push_back(username);
+            closesocket(client.socket);
         }
 
         for (const auto &username : to_remove)
         {
             string group = clients[username].group;
-            if (!group.empty())
-            {
-                group_members[group].erase(username);
-                if (group_members[group].empty())
-                {
-                    group_members.erase(group);
-                    group_owners.erase(group);
-                }
-            }
+            // 如果用户未加入任何群组，则跳过
+            if (group.empty()) continue;
+            group_members[group].erase(username);
+            
+            // 如果群组为空，则删除群组
+            if (!group_members[group].empty()) continue;
+            group_members.erase(group);
+            group_owners.erase(group);
             clients.erase(username);
         }
     }
 }
 
+/**
+ * 处理客户端连接
+ * @param client_sock 客户端socket
+ */
 void handleClient(SOCKET client_sock)
 {
     try
     {
         char buffer[1024];
-        string username, group;
 
         int len = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
         if (len <= 0)
@@ -110,29 +130,31 @@ void handleClient(SOCKET client_sock)
             buffer[i] ^= XOR_KEY;
         buffer[len] = '\0';
 
-        username = strtok(buffer, " ");
-        group = strtok(NULL, " ");
+        string username = strtok(buffer, " ");
+        string group = strtok(NULL, " ");
 
-        if (username.empty())
+        // 如果用户名和群组名为空，则关闭连接
+        lock_guard<mutex> lock(client_mutex);
+        if (username.empty() || group.empty())
         {
-            sendToClient(client_sock, "Error: Username cannot be empty.");
+            sendToClient(client_sock, "Error: Username and group cannot be empty.");
             closesocket(client_sock);
             return;
         }
 
+        // 检查用户名是否已存在
+        lock_guard<mutex> lock(client_mutex);
+        if (clients.count(username))
         {
-            lock_guard<mutex> lock(client_mutex);
-            if (clients.count(username))
-            {
-                sendToClient(client_sock, "Error: Username already in use.");
-                closesocket(client_sock);
-                return;
-            }
-            clients[username] = {client_sock, username, group, false, time(nullptr)};
-            group_members[group].insert(username);
-            if (group_owners.count(group) == 0)
-                group_owners[group] = username;
+            sendToClient(client_sock, "Error: Username already in use.");
+            closesocket(client_sock);
+            return;
         }
+
+        clients[username] = {client_sock, username, group, false, time(nullptr)};
+        group_members[group].insert(username);
+        if (group_owners.count(group) == 0)
+            group_owners[group] = username;
 
         broadcast(group, username + " joined the group.", username);
         sendToClient(client_sock, "You joined group [" + group + "] as " + username +
@@ -141,20 +163,21 @@ void handleClient(SOCKET client_sock)
         while (true)
         {
             int msg_len = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
-            if (msg_len <= 0) {
-                if (msg_len == 0) {
-                    cout << "Client disconnected: " << username << endl;
-                } else {
-                    cerr << "Error receiving data from client: " << username << " (Error code: " << WSAGetLastError() << ")" << endl;
-                }
-                break;
+
+            if (msg_len < 0) {
+                cerr << "Error receiving data from client: " << username << " (Error code: " << WSAGetLastError() << ")" << endl; 
+                return;
+            }
+            if (msg_len == 0) {
+                cout << "Client disconnected: " << username << endl; 
+                return;
             }
 
-            {
-                lock_guard<mutex> lock(client_mutex);
-                clients[username].last_activity = time(nullptr);
-            }
+            // 获取用户的最后活动时间
+            lock_guard<mutex> lock(client_mutex);
+            clients[username].last_activity = time(nullptr);
 
+            // 处理消息为明文msg
             for (int i = 0; i < msg_len; ++i)
                 buffer[i] ^= XOR_KEY;
             buffer[msg_len] = '\0';
