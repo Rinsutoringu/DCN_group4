@@ -89,21 +89,29 @@ void checkInactiveUsers() {
 
 
 void handleClient(SOCKET client_sock) {
+    string usr, grp, msg;
     char buffer[1024];
 
-    int len = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
-    if (len <= 0) return;
-
-    istringstream iss(xorCipher(std::string(buffer, len)));
-
-    string usr, grp, msg;
-    iss >> usr >> grp;
-    getline(iss, msg);
-
-    // 合法性验证：如果用户名和群组名为空，则关闭连接
+    // 获取客户端报文并进行处理
     {
         lock_guard<mutex> lock(client_mutex);
-        if (username.empty() || group.empty())
+        
+        int len = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
+        if (len <= 0) return;
+        // 解密
+        istringstream iss(xorCipher(std::string(buffer, len)));
+        // 流式切割报文
+        
+        iss >> usr >> grp;
+        getline(iss, msg);
+        // 去掉消息前面的空格
+        if(!msg.empty() && msg[0] == ' ') msg = msg.substr(1);
+    }
+
+    // 合法性验证：检查用户名和群组名是否为空
+    {
+        lock_guard<mutex> lock(client_mutex);
+        if (usr.empty() || grp.empty())
         {
             sendToClient(client_sock, "Error: Username and group cannot be empty.");
             closesocket(client_sock);
@@ -114,24 +122,23 @@ void handleClient(SOCKET client_sock) {
     // 合法性验证：检查用户名是否已存在
     {
         lock_guard<mutex> lock(client_mutex);
-        if (clients.count(username)) {
+        if (clients.count(usr)) {
             sendToClient(client_sock, "Error: Username already in use.");
             closesocket(client_sock);
             return;
         }
-        clients[username] = {client_sock, username, group, false, time(nullptr)};
-        group_members[group].insert(username);
-        if (group_owners.count(group) == 0)
-            group_owners[group] = username;
+        // 完成合法性验证，将用户信息添加到客户端列表
+        clients[usr] = {client_sock, usr, grp, false, time(nullptr)};
+        group_members[grp].insert(usr);
+        // 如果群组没有拥有者，则第一个加入者将成为拥有者
+        if (group_owners.count(grp) == 0) group_owners[grp] = usr;
     }
     
     // 如果该用户合法，那么：
     // 给group群组中的全部客户端广播加入信息
-    broadcast(group, 
-        username + " joined the group.", username);
+    broadcast(grp, usr + " joined the group.", usr);
     // 给加入的那个客户端单独发送信息
-    sendToClient(client_sock,
-        "You joined group [" + group + "] as " + username + (group_owners[group] == username ? " (owner)." : "."));
+    sendToClient(client_sock, "You joined group [" + grp + "] as " + usr + (group_owners[grp] == usr ? " (owner)." : "."));
 
     // 死循环 不断获取用户输入内容，判断该如何处理
     while (true) {
@@ -143,7 +150,7 @@ void handleClient(SOCKET client_sock) {
         // 获取用户最后在线时间
         {
             lock_guard<mutex> lock(client_mutex);
-            clients[username].last_activity = time(nullptr);
+            clients[usr].last_activity = time(nullptr);
         }
         // TODO 昨晚干到这里
 
