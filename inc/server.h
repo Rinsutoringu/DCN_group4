@@ -18,6 +18,9 @@
 #define MAX_CLIENTS 100
 #define INACTIVITY_TIMEOUT 300 // 5 minutes in seconds
 
+// 使用std作用域
+using namespace std;
+
 // 客户端信息结构
 struct ClientInfo
 {
@@ -35,3 +38,5 @@ extern std::map<std::string, ClientInfo> clients;  // 当前连接的用户列�
 extern std::mutex client_mutex;  // 保护客户端列表的互斥锁
 extern std::ofstream chatlog;  // 聊天记录文件
 
+bool is_Admin(const std::string& username);
+bool is_Owner(const std::string& username);
