@@ -13,6 +13,7 @@
 #include <ctime>
 #include <fstream>
 #include <exception>
+#include <deque>
 
 #define XOR_KEY 0xAB
 #define MAX_CLIENTS 100
@@ -78,7 +79,7 @@ void sendToClient(SOCKET sock, const std::string& msg);
 /**
  * 发送信息给有权限的客户端
  */
-void sendToGroup(const std::string& msg);
+void sendToGroup(const std::string& group, const std::string& msg);
 
 
 /**
@@ -155,13 +156,14 @@ void handleCreateGroup(const std::string& group, const std::string& usr);
  * 踢完后对应的人失去权限
  * @param usr 要踢谁？
  */
-void handleKickGroup(const std::string& usr);
+void handleKickGroup(const std::string& group, const std::string& usr);
 
 
 /**
  * 处理塞口球的请求
  * 被塞口球的人失去权限，等同未加群的人
  * @param usr 要禁言的人
+ * @param group 群组名
  */
 void handleMuteUser(const std::string& usr);
 
@@ -194,7 +196,7 @@ void validateUserInput(const std::string& usr, const std::string& grp, SOCKET cl
 /**
  * 帮助函数
  */
-void handleHelp();
+void handleHelp(const std::string& usr);
 
 
 /**
@@ -228,7 +230,7 @@ void handleShowUserStatus(const std::string& usr);
  * 展示最近的20条聊天记录
  * 读取文件
  */
-void handleShowHistory();
+void handleShowHistory(std::ofstream& chatlog, const std::string& usr);
 
 
 /**

@@ -4,14 +4,16 @@
 #include "server.h"
 #pragma comment(lib, "ws2_32.lib")
 
-// 定义全局变量
-std::map<std::string, std::string> group_owners;
-std::map<std::string, ClientInfo> clients;
-std::mutex client_mutex;
-std::ofstream chatlog;
-
 // 使用std作用域
 using namespace std;
+
+// 定义全局变量
+map<std::string, std::string> group_owners;
+map<std::string, ClientInfo> clients;
+mutex client_mutex;
+ofstream chatlog;
+
+
 
 string xorCipher(const string& data) {
     string res = data;
@@ -44,7 +46,6 @@ void handleClient(SOCKET client_sock) {
         // 解密
         istringstream iss(xorCipher(std::string(buffer, len)));
         // 流式切割报文
-        
         iss >> usr >> grp;
         getline(iss, msg);
         // 去掉消息前面的空格
@@ -54,20 +55,18 @@ void handleClient(SOCKET client_sock) {
     validateUserInput(usr, grp, client_sock);
 
     {
-
         // 完成合法性验证，将用户信息添加到客户端列表
         clients[usr] = {client_sock, usr, grp, false, time(nullptr)};
-        // group_members[grp].insert(usr);
         // 如果群组没有拥有者，则第一个加入者将成为拥有者
         if (group_owners.count(grp) == 0) group_owners[grp] = usr;
     }
     
     // 如果该用户合法，那么：
-    // 给group群组中的全部客户端广播加入信息
-    broadcast(usr + " joined the group.");
+    // 在群里广播该用户的加入信息
+    sendToGroup(grp, usr + " joined the group.");
+    
     // 给加入的那个客户端单独发送信息
     sendToClient(client_sock, "You joined group [" + grp + "] as " + usr + (group_owners[grp] == usr ? " (owner)." : "."));
-
 
     /*#################核心指令处理逻辑#################*/
     while (true) {handleUserInput(usr, grp, msg);}
@@ -87,8 +86,8 @@ int main() {
     WSADATA wsa;
     WSAStartup(MAKEWORD(2, 2), &wsa);
 
-    // 打开chatlog文件
-    chatlog.open("chatlog.txt", ios::app);
+    // 打开chatlog文件，支持读写和追加模式
+    chatlog.open("chatlog.txt", ios::in | ios::out | ios::app);
     if (!chatlog.is_open()) {
         cerr << "Failed to open chat log file!" << endl;
         return -1;

@@ -4,12 +4,16 @@ using namespace std;
 
 bool is_Owner(const std::string& username) {
     // 判断用户是否是群组持有者
-    // 因为其实最多只能创建一个群组，所以直接获取group_owners的第二个元素即可。
-    auto it = group_owners.find(username);
-    if (it != group_owners.end()) {
-        return it->second == username; // Assuming group_owners maps username to a string
-    }
-    return false;
+    lock_guard<mutex> lock(client_mutex);
+    ClientInfo* client = getClient(username);
+    if (!client) return false;
+
+
+    string group = client->group;
+    // 检查有没有在任何群里
+    if (group == "") return false;
+    // 检查群组拥有者
+    return group_owners[group] == username;
 }
 
 // 验证用户输入合法性
@@ -40,10 +44,22 @@ void broadcast(const string& msg) {
     lock_guard<mutex> lock(client_mutex);
     // 拼接字符串
     string timestamped_msg = getTimestamp() + " " + msg;
-    chatlog << timestamped_msg << endl;
     // 所有在服务器的客户端都应接收到广播
     for (const auto& [username, client] : clients) {
         sendToClient(client.socket, timestamped_msg);
+    }
+}
+
+// 正常的群聊内部广播
+void sendToGroup(const std::string& group, const std::string& msg) {
+    lock_guard<mutex> lock(client_mutex);
+    // 拼接字符串
+    string timestamped_msg = getTimestamp() + " " + msg;
+    // 所有在群组中的客户端都应接收到广播
+    for (const auto& [username, client] : clients) {
+        if (client.group == group) {
+            sendToClient(client.socket, timestamped_msg);
+        }
     }
 }
 
@@ -58,5 +74,5 @@ ClientInfo* getClient(const string& usr) {
 }
 
 void handleHelp() {
-    
+    // TODO
 }
