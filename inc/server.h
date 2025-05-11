@@ -238,14 +238,24 @@ void handleShowHistory(std::ofstream& chatlog, const std::string& usr);
  */
 void handleShowGroupUser();
 
+
 /**
  * 客户端与服务器断开连接指令
  * @param usr 要离线的用户名
  */
 void handleQuit(const std::string& usr);
 
+
 /**
  * 根据用户名获取特定的Client结构体
  * @param usr 需要获取结构体的用户名
  */
 ClientInfo* getClient(const std::string& usr);
+
+
+/**
+ * 检查用户有没有被禁言
+ * @param usr 用户名
+ * @return 如果被禁言返回1，没禁言返回0，出错返回-1
+ */
+int muteCheck(const std::string& usr);

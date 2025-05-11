@@ -40,7 +40,10 @@ string ChatClient::xorCipher(const string& data) {
 }
 
 void ChatClient::sendMessage(const string& message) {
-    string encrypted = xorCipher(message);
+    // 向服务器发信
+
+    string encrypted = xorCipher(message);// 进行加密
+    // 发送，并进行错误处理
     if (send(connect_sock, encrypted.c_str(), encrypted.length(), 0) == SOCKET_ERROR) {
         lock_guard<mutex> lock(cout_mutex);
         cerr << "Send failed!" << endl;
@@ -79,6 +82,7 @@ void ChatClient::receiveMessage() {
 }
 
 void ChatClient::handleConnection() {
+    // 把这个任务与接收消息的线程关联起来
     thread receiver(&ChatClient::receiveMessage, this);
 
     string input;
@@ -89,11 +93,7 @@ void ChatClient::handleConnection() {
         }
         getline(cin, input);
 
-        if (input == "/help") {
-            showHelp();
-            continue;
-        }
-
+        // 退出逻辑处理
         if (input == "/quit") {
             sendMessage("/quit");
             closesocket(connect_sock);
@@ -138,26 +138,25 @@ void ChatClient::start() {
     getline(cin, username);
 
     while (true) {
+        
+        // 提示用户输入命令
         {
             lock_guard<mutex> lock(cout_mutex);
             cout << "Enter command (/create <group>, /join <group>): ";
         }
+        // 获取用户命令
         string input;
         getline(cin, input);
-        if (input == "/list") {
-            sendMessage("/list");
-            continue;
-        }
+
+        // 本地验证初始化命令合法性
         size_t space_pos = input.find(' ');
         if (space_pos == string::npos) {
             lock_guard<mutex> lock(cout_mutex);
             cerr << "Invalid command. Usage: /create <group> or /join <group>\n";
             continue;
         }
-
         string cmd = input.substr(0, space_pos);
         group = input.substr(space_pos + 1);
-
         if (cmd != "/create" && cmd != "/join") {
             lock_guard<mutex> lock(cout_mutex);
             cerr << "Invalid command. Usage: /create <group> or /join <group>\n";

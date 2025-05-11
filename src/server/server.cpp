@@ -34,13 +34,23 @@ string getTimestamp() {
 
 
 void handleClient(SOCKET client_sock) {
+    // 处理禁言逻辑
+    {
+        lock_guard<mutex> lock(client_mutex);
+        for (const auto& client : clients) {
+            
+            if (client.second.socket == client_sock) {
+                int muteStatus = muteCheck(client.second.username);
+                sendToClient(client.second.socket, "You are muted.");
+                if (muteStatus != 0) return;
+            }
+        }
+    }
     string usr, grp, msg;
     char buffer[1024];
-
     // 获取客户端报文并进行处理
     {
         lock_guard<mutex> lock(client_mutex);
-        
         int len = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
         if (len <= 0) return;
         istringstream iss(xorCipher(std::string(buffer, len))); // 解密

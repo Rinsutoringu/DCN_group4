@@ -73,6 +73,10 @@ ClientInfo* getClient(const string& usr) {
     return &client;
 }
 
-void handleHelp() {
-    // TODO
+int muteCheck(const std::string& usr) {
+    lock_guard<mutex> lock(client_mutex);
+    ClientInfo* client = getClient(usr);
+    if (!client) return -1;
+    if (client->muted) return 1;
+    return 0;
 }
