@@ -3,11 +3,6 @@
 #include "server.h"
 
 
-/**
- * 处理建群请求
- * @param group 群名
- * @param username 用户名
- */
 void handleCreateGroup(const std::string& group, const std::string& username) {
     // // 先判断用户是否是管理员
     // if (!is_Admin(username)) {

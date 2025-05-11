@@ -14,17 +14,13 @@ std::ofstream chatlog;
 // 使用std作用域
 using namespace std;
 
-// XOR加密函数
 string xorCipher(const string& data) {
     string res = data;
     for (char& c : res) c ^= XOR_KEY;
     return res;
 }
 
-/**
- * 获取当前时间戳
- * @return 当前时间戳字符串
- */
+
 string getTimestamp() {
     auto now = chrono::system_clock::now();
     time_t t = chrono::system_clock::to_time_t(now);
@@ -34,22 +30,12 @@ string getTimestamp() {
     return oss.str();
 }
 
-/**
- * 发送信息到客户端
- * @param sock 客户端socket
- * @param msg 发送的消息
- */
 void sendToClient(SOCKET sock, const string& msg) {
     string encrypted = xorCipher(msg);
     send(sock, encrypted.c_str(), encrypted.size(), 0);
 }
 
-/**
- * 指定群组，广播消息到所有在该群组中的客户端
- * @param group 群组名称
- * @param msg 发送的消息
- * @param except 排除的用户
- */
+
 void broadcast(const string& group, const string& msg, const string& except = "") {
     // 进程锁
     lock_guard<mutex> lock(client_mutex);
@@ -64,9 +50,7 @@ void broadcast(const string& group, const string& msg, const string& except = ""
     }
 }
 
-/**
- * 检查不活跃的用户
- */
+
 void checkInactiveUsers() {
 
     while (true) {
@@ -102,10 +86,7 @@ void checkInactiveUsers() {
     }
 }
 
-/**
- * 处理客户端连接
- * @param client_sock 客户端socket
- */
+
 void handleClient(SOCKET client_sock) {
     char buffer[1024];
 

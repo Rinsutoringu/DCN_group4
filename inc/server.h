@@ -18,10 +18,12 @@
 #define MAX_CLIENTS 100
 #define INACTIVITY_TIMEOUT 300 // 5 minutes in seconds
 
-// 使用std作用域
-using namespace std;
 
-// 客户端信息结构
+/*#####################客户端信息结构体#####################*/
+
+/**
+ * 客户端信息结构体
+ */
 struct ClientInfo
 {
     // 客户端socket
@@ -38,25 +40,81 @@ struct ClientInfo
     bool is_admin = false;
 };
 
-// 全局变量声明
-extern std::map<std::string, std::set<std::string>> group_members;  // 群组成员
-extern std::map<std::string, std::string> group_owners;  // 群组拥有者
-extern std::map<std::string, ClientInfo> clients;  // 当前连接的用户列表
-extern std::mutex client_mutex;  // 保护客户端列表的互斥锁
-extern std::ofstream chatlog;  // 聊天记录文件
+/*#####################声明全局变量#####################*/
+// 群组成员
+extern std::map<std::string, std::set<std::string>> group_members;
+// 群组拥有者
+extern std::map<std::string, std::string> group_owners;
+// 当前连接的用户列表
+extern std::map<std::string, ClientInfo> clients;
+// 保护客户端列表的互斥锁
+extern std::mutex client_mutex;
+// 聊天记录文件
+extern std::ofstream chatlog;
 
-// 函数声明
-std::string xorCipher(const std::string& data);
+/*#####################函数声明#####################*/
+
+/**
+ * 发送信息到客户端
+ * @param sock 客户端socket
+ * @param msg 发送的消息
+ */
+void sendToClient(SOCKET sock, const std::string& msg);
+
+/**
+ * 指定群组，广播消息到所有在该群组中的客户端
+ * @param group 群组名称
+ * @param msg 发送的消息
+ * @param except 排除的用户
+ */
+void broadcast(const std::string& group, const std::string& msg, const std::string& except = "");
+
+/**
+ * 检查不活跃的用户
+ */
+void checkInactiveUsers();
+
+/**
+ * 处理客户端连接
+ * @param client_sock 客户端socket
+ */
+void handleClient(SOCKET client_sock);
+
+/**
+ * 获取当前时间戳
+ * @return 当前时间戳字符串
+ */
 std::string getTimestamp();
 
-// 工具函数
-void sendToClient(SOCKET sock, const std::string& msg);
-void broadcast(const std::string& group, const std::string& msg, const std::string& except = "");
-void checkInactiveUsers();
-void handleClient(SOCKET client_sock);
+/**
+ * XOR加密函数
+ * @param data 要加密的数据
+ * @return 加密后的数据
+ */
+std::string xorCipher(const std::string& data);
+
+/**
+ * 判断用户是否是管理员
+ * 暂时不用
+ * @param username 用户名
+ * @return 如果是管理员返回true，否则返回false
+ */
 bool is_Admin(const std::string& username);
+
+/**
+ * 判断用户是否是群组持有者
+ * @param username 用户名
+ * @return 如果是群主返回true，否则返回false
+ */
 bool is_Owner(const std::string& username);
 
 // 处理指令
 void handleLeaveGroup(const std::string& group, const std::string& username);
 void handleMuteUser(const std::string& group, const std::string& username);
+
+/**
+ * 处理建群请求
+ * @param group 群名
+ * @param username 用户名
+ */
+void handleCreateGroup(const std::string& group, const std::string& username);
