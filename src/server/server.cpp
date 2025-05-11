@@ -43,16 +43,13 @@ void handleClient(SOCKET client_sock) {
         
         int len = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
         if (len <= 0) return;
-        // 解密
-        istringstream iss(xorCipher(std::string(buffer, len)));
-        // 流式切割报文
-        iss >> usr >> grp;
+        istringstream iss(xorCipher(std::string(buffer, len))); // 解密
+        iss >> usr >> grp; // 流式切割报文
         getline(iss, msg);
-        // 去掉消息前面的空格
-        if(!msg.empty() && msg[0] == ' ') msg = msg.substr(1);
+        if(!msg.empty() && msg[0] == ' ') msg = msg.substr(1); // 去掉消息前面的空格
     }
-    // 验证合法性
-    validateUserInput(usr, grp, client_sock);
+    
+    validateUserInput(usr, grp, client_sock); // 验证合法性 这真的不是GPT写的，这是我手敲的
 
     {
         // 完成合法性验证，将用户信息添加到客户端列表
@@ -60,23 +57,14 @@ void handleClient(SOCKET client_sock) {
         // 如果群组没有拥有者，则第一个加入者将成为拥有者
         if (group_owners.count(grp) == 0) group_owners[grp] = usr;
     }
-    
-    // 如果该用户合法，那么：
-    // 在群里广播该用户的加入信息
     sendToGroup(grp, usr + " joined the group.");
-    
-    // 给加入的那个客户端单独发送信息
     sendToClient(client_sock, "You joined group [" + grp + "] as " + usr + (group_owners[grp] == usr ? " (owner)." : "."));
 
     /*#################核心指令处理逻辑#################*/
     while (true) {handleUserInput(usr, grp, msg);}
 
-    {
-        lock_guard<mutex> lock(client_mutex);
-        
-        // 断开连接时，删除客户端
-        clients.erase(usr);
-    }
+    // 退出处置
+    clients.erase(usr);
     closesocket(client_sock);
 }
 

@@ -9,6 +9,7 @@ void handleUserInput(const string& usr, const string& grp, const string& msg) {
     // 传入用户名和群名
     // TODO 进行合法性查验
 
+
     // 根据用户的输入调用不同函数
     // 如: /kick
     // 使用宏定义来自由化处理逻辑
@@ -228,6 +229,7 @@ void handleQuit(const string& usr) {
         sendToGroup(group, "User " + usr + " has left the group " + group + ".");
     }
     clients.erase(usr);
+    closesocket(client->socket);
 }
 
 void handleHelp(const string& usr) {
