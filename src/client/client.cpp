@@ -127,6 +127,8 @@ void ChatClient::showHelp() {
 
 void ChatClient::start() {
     string group;
+
+    // 展示帮助菜单（本地处理）
     showHelp();
 
     {

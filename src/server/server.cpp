@@ -64,7 +64,10 @@ void handleClient(SOCKET client_sock) {
     while (true) {handleUserInput(usr, grp, msg);}
 
     // 退出处置
-    clients.erase(usr);
+    {
+        lock_guard<mutex> lock(client_mutex);
+        clients.erase(usr);
+    }
     closesocket(client_sock);
 }
 
