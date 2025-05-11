@@ -15,7 +15,7 @@ void handleUserInput(const string& usr, const string& grp, const string& msg) {
     // 如: /kick
     // 使用宏定义来自由化处理逻辑
     HANDLE_COMMAND("/create", handleCreateGroup, grp, usr);
-    HANDLE_COMMAND("/join", handleJoinGroup, usr);
+    HANDLE_COMMAND("/join", handleJoinGroup, grp, usr);
     HANDLE_COMMAND("/leave", handleLeaveGroup, usr);
     HANDLE_COMMAND("/list_all_users", handleShowAllClient);
     HANDLE_COMMAND("/userstatus", handleShowUserStatus, usr);
@@ -32,40 +32,39 @@ void handleUserInput(const string& usr, const string& grp, const string& msg) {
     broadcast(grp, usr + ": " + msg);
 }
 
-
+// 创建群组
 void handleCreateGroup(const string& group, const string& usr) {
 
-    // 创建群组
-    lock_guard<mutex> lock(client_mutex);
     // 从clients获取当前连接的用户
+    lock_guard<mutex> lock(client_mutex);
     ClientInfo* client = getClient(usr);
-    if (!client) {
-        cerr << "User " << usr << " not found." << endl;
+    if (!client) return;
+
+    // 已经有群了的用户不可以再创新的群
+    if (client->group != "") {
+        sendToClient(client->socket, "You are already in a group.");
         return;
     }
+
     // 将该用户结构体中in_group置true
     sendToClient(client->socket,"A group named " + group + " created successfully!");
-    client->in_group = true;
     client->group = group;
+
+    // 配置groupOwner
+    group_owners[group] = usr;
 }
 
 
 void handleJoinGroup(const string& group, const string& usr) {
-    // 获取用户
-    auto it = clients.find(usr);
-    if (it == clients.end()) {
-        cerr << "User " << usr << " not found." << endl;
-        return;
-    }
-    ClientInfo& client = it->second;
-    if (client.in_group) {
-        sendToClient(client.socket, "You are already in a group.");
-        return;
-    }
+
+    // 从clients获取当前连接的用户
+    lock_guard<mutex> lock(client_mutex);
+    ClientInfo* client = getClient(usr);
+    if (!client) return;
+
     // 将该用户结构体中in_group置true
-    sendToClient(client.socket, "You joined the group " + client.group);
-    client.in_group = true;
-    client.group = group;
+    sendToClient(client->socket, "You joined the group " + client->group);
+    client->group = group;
 }
 
 void handleLeaveGroup(const string& username) {

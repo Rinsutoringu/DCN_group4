@@ -36,12 +36,11 @@ struct ClientInfo
     SOCKET socket;
     // 用户名
     std::string username;
-    // 用户所在群名
-    std::string group;
+    // 用户所在群名，用户不在群里就是空字符串
+    std::string group = "";
     // 用户是否被塞口球
     bool muted = false;
-    // 用户是否在群里
-    bool in_group = false;
+
     // 与服务器的最后连接时间
     time_t last_activity;
     // 是否是管理员

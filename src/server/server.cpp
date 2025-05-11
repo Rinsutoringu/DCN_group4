@@ -29,11 +29,7 @@ string getTimestamp() {
     return oss.str();
 }
 
-void sendToClient(SOCKET sock, const string& msg) {
-    // 执行信息加密
-    string encrypted = xorCipher(msg);
-    send(sock, encrypted.c_str(), encrypted.size(), 0);
-}
+
 
 void handleClient(SOCKET client_sock) {
     string usr, grp, msg;
