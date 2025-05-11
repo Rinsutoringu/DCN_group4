@@ -22,6 +22,14 @@ ChatClient::ChatClient(const char* server_name, unsigned short port) {
         exit(-1);
     }
 
+    // 设置接收超时时间为 10 秒
+    int recv_timeout = 100000; // 单位：毫秒
+    setsockopt(connect_sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&recv_timeout, sizeof(recv_timeout));
+
+    // 设置发送超时时间为 10 秒
+    int send_timeout = 100000; // 单位：毫秒
+    setsockopt(connect_sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&send_timeout, sizeof(send_timeout));
+
     if (connect(connect_sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
         lock_guard<mutex> lock(cout_mutex);
         cerr << "Connection failed!" << endl;
@@ -51,29 +59,33 @@ void ChatClient::sendMessage(const string& message) {
 }
 
 void ChatClient::receiveMessage() {
-    cerr << "receivemessage上锁" << endl;
-    lock_guard<mutex> lock(cout_mutex);
-    cerr << "上锁成功" << endl;
-
     char buffer[1024];
     while (true) {
-
-        // 接收消息，存入message
         int msg_len = recv(connect_sock, buffer, sizeof(buffer) - 1, 0);
         if (msg_len > 0) {
             for (int i = 0; i < msg_len; ++i) buffer[i] ^= XOR_KEY;
             buffer[msg_len] = '\0';
             string msg = buffer;
-            cout << msg << endl;
-            
-            if (msg.find("CMD_KICKOUT:") != string::npos) cout << "You are kicked.\nEnter command (/create, /join): ";
-            cout.flush();
-        }
-        else if (msg_len == 0) {
+
+            {
+                lock_guard<mutex> lock(cout_mutex);
+                cout << msg << endl;
+            }
+
+            if (msg.find("CMD_KICKOUT:") != string::npos) {
+                lock_guard<mutex> lock(cout_mutex);
+                cout << "You are kicked.\nEnter command (/create, /join): ";
+                cout.flush();
+            }
+        } else if (msg_len == 0) {
             cout << "\nDisconnected from server." << endl;
+            closesocket(connect_sock);
+            WSACleanup();
             exit(0);
         } else {
             cerr << "\nReceive failed!" << endl;
+            closesocket(connect_sock);
+            WSACleanup();
             exit(-1);
         }
     }
@@ -99,6 +111,11 @@ void ChatClient::handleConnection() {
                 break;
             }
 
+            if (input_queue.empty()) {
+                cerr << "Error: input_queue is empty but notified!" << endl;
+                continue;
+            }
+
             input = input_queue.front();
             input_queue.pop();
         }
@@ -107,7 +124,9 @@ void ChatClient::handleConnection() {
         sendMessage(input);
     }
 
+    
     input_thread.join(); // 等待输入线程结束
+    // receiver.join();
 }
 
 void ChatClient::showHelp() {
@@ -189,7 +208,7 @@ void ChatClient::getMessage() {
             lock_guard<mutex> lock(input_mutex);
             if (input == "/quit") {
                 exit_flag = true;
-                input_cv.notify_all();
+                input_cv.notify_all(); // 通知主线程退出
                 break;
             }
             input_queue.push(input);

@@ -41,5 +41,11 @@
       ],
       "preLaunchTask": "Build Client"
     }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Server and Client",
+      "configurations": ["Debug Server", "Debug Client"]
+    }
   ]
 }

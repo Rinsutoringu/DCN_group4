@@ -22,10 +22,12 @@ void validateUserInput(const string& usr, const string& grp, SOCKET client_sock)
     {
         sendToClient(client_sock, "Error: Username and group cannot be empty.");
         closesocket(client_sock);
+        return;
     }
     if (clients.count(usr)) {
         sendToClient(client_sock, "Error: Username already in use.");
         closesocket(client_sock);
+        return;
     }
     return;
 }
@@ -33,7 +35,10 @@ void validateUserInput(const string& usr, const string& grp, SOCKET client_sock)
 // 私聊
 void sendToClient(SOCKET sock, const string& msg) {
     // 执行信息加密
-    string encrypted = xorCipher(msg);
+    
+    // 为消息附加调试信息
+    string debug_info = getTimestamp() + " 服务器私聊模块发送的 " + msg;
+    string encrypted = xorCipher(debug_info);
     send(sock, encrypted.c_str(), encrypted.size(), 0);
 }
 

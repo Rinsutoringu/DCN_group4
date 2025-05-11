@@ -5,58 +5,69 @@ using namespace std;
 
 // 处理用户输入
 void handleUserInput(const string& usr, const string& grp, const string& msg) {
-    cerr << "handleUserInput" << endl;
-    cerr << "线程 " << this_thread::get_id() << " 尝试获取锁" << endl;
-lock_guard<recursive_mutex> lock(client_mutex);
-cerr << "线程 " << this_thread::get_id() << " 成功获取锁" << endl;
-    // 传入用户名和群名
+    cerr << "handleUserInput 开始阻塞式处理指令" << endl;
 
-    // 根据用户的输入调用不同函数
-    // 如: /kick
-    // 使用宏定义来自由化处理逻辑
-    // DEBUG
-    cerr << "准备处理用户指令" << endl;
-    HANDLE_COMMAND("/create", handleCreateGroup, grp, usr);
-    HANDLE_COMMAND("/join", handleJoinGroup, grp, usr);
-    HANDLE_COMMAND("/leave", handleLeaveGroup, usr);
-    HANDLE_COMMAND("/list_all_users", handleShowAllClient);
-    HANDLE_COMMAND("/userstatus", handleShowUserStatus, usr);
-    HANDLE_COMMAND("/history", handleShowHistory, chatlog, usr);
-    HANDLE_COMMAND("/groupuser", handleShowGroupUser);
-    HANDLE_COMMAND("/mute", handleMuteUser, usr);
-    HANDLE_COMMAND("/unmute", handleUnmuteUser, usr);
-    HANDLE_COMMAND("/kick", handleKickGroup, grp, usr);
-    HANDLE_COMMAND("/dismiss", handleDismissGroup, usr);
-    HANDLE_COMMAND("/quit", handleQuit, usr);
-    HANDLE_COMMAND("/help", handleHelp, usr);
+    while (true) {
+        cerr << "线程 " << this_thread::get_id() << " 尝试获取锁" << endl;
+        lock_guard<recursive_mutex> lock(client_mutex);
+        cerr << "线程 " << this_thread::get_id() << " 成功获取锁" << endl;
 
-    // 如果用户的发言未匹配上方指令，那么按照发言处理
-    // DEBUG
-    cerr << "未发现用户指令，开始判断权限" << endl;
-    // 判断用户有没有被禁言
-    cerr << "01" << endl;
-    cerr << "02" << endl;
-    ClientInfo* client = getClient(usr);
-    cerr << "03" << endl;
-    int muteStatus = muteCheck(client->username);
-    cerr << "04" << endl;
-    sendToClient(client->socket, "You are muted.");
-    // DEBUG
-    cerr << "发现用户被禁言，发言终止" << endl;
-    if (muteStatus != 0) return;
+        // 检查用户是否仍然在线
+        ClientInfo* client = getClient(usr);
+        if (!client) {
+            cerr << "用户 " << usr << " 已断开连接，退出指令处理循环" << endl;
+            break;
+        }
 
+        // 检查是否有新消息
+        if (msg.empty()) {
+            cerr << "未收到新消息，继续等待..." << endl;
+            this_thread::sleep_for(chrono::milliseconds(100)); // 等待 100 毫秒
+            continue;
+        }
 
-    // DEBUG
-    cerr << "用户发言未受限，准备写入log" << endl;
-    // 存入chatlog文件
-    {
+        // 处理用户指令
+        cerr << "准备处理用户指令: " << msg << endl;
+        HANDLE_COMMAND("/create", handleCreateGroup, grp, usr);
+        HANDLE_COMMAND("/join", handleJoinGroup, grp, usr);
+        HANDLE_COMMAND("/leave", handleLeaveGroup, usr);
+        HANDLE_COMMAND("/list_all_users", handleShowAllClient);
+        HANDLE_COMMAND("/userstatus", handleShowUserStatus, usr);
+        HANDLE_COMMAND("/history", handleShowHistory, chatlog, usr);
+        HANDLE_COMMAND("/groupuser", handleShowGroupUser);
+        HANDLE_COMMAND("/mute", handleMuteUser, usr);
+        HANDLE_COMMAND("/unmute", handleUnmuteUser, usr);
+        HANDLE_COMMAND("/kick", handleKickGroup, grp, usr);
+        HANDLE_COMMAND("/dismiss", handleDismissGroup, usr);
+        HANDLE_COMMAND("/quit", handleQuit, usr);
+        HANDLE_COMMAND("/help", handleHelp, usr);
 
-        sendToGroup(grp, usr + ": " + msg);
-        chatlog << getTimestamp() + " " + usr + ": " + msg << endl;
-        if (chatlog.fail()) cerr << "Error writing to chatlog file." << endl;
+        // 如果用户的发言未匹配上方指令，那么按照普通消息处理
+        if (msg[0] != '/') {
+            cerr << "未发现用户指令，开始判断权限" << endl;
+
+            // 判断用户是否被禁言
+            int muteStatus = muteCheck(usr);
+            if (muteStatus != 0) {
+                sendToClient(client->socket, "You are muted.");
+                cerr << "用户 " << usr << " 被禁言，发言终止" << endl;
+                continue;
+            }
+
+            // 将消息广播到群组并写入日志
+            sendToGroup(grp, usr + ": " + msg);
+            chatlog << getTimestamp() + " " + usr + ": " + msg << endl;
+            if (chatlog.fail()) {
+                cerr << "Error writing to chatlog file." << endl;
+            }
+            cerr << "消息已广播并写入日志" << endl;
+        }
+
+        // 清空消息内容，等待下一条消息
+        cerr << "等待下一条消息..." << endl;
     }
-    // DEBUG
-    cerr << "chatlog写入完成" << endl;
+
+    cerr << "handleUserInput 结束阻塞式处理指令" << endl;
 }
 
 
