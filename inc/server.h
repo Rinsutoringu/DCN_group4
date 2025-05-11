@@ -35,7 +35,7 @@ struct ClientInfo
     // 客户端socket
     SOCKET socket;
     // 用户名
-    std::string username;
+    std::string usr;
     // 用户所在群名
     std::string group;
     // 用户是否被塞口球
@@ -115,18 +115,18 @@ std::string xorCipher(const std::string& data);
 /**
  * 判断用户是否是管理员
  * 暂时不用
- * @param username 用户名
+ * @param usr 用户名
  * @return 如果是管理员返回true，否则返回false
  */
-bool is_Admin(const std::string& username);
+bool is_Admin(const std::string& usr);
 
 
 /**
  * 判断用户是否是群组持有者
- * @param username 用户名
+ * @param usr 用户名
  * @return 如果是群主返回true，否则返回false
  */
-bool is_Owner(const std::string& username);
+bool is_Owner(const std::string& usr);
 
 
 /**
@@ -141,42 +141,42 @@ void handleUserInput(const std::string& usr, const std::string& grp, const std::
  * 现在只能建一个群，建群的人将成为Owner
  * 建群后获得权限
  * @param group 群名
- * @param username 用户名
+ * @param usr 用户名
  */
-void handleCreateGroup(const std::string& group, const std::string& username);
+void handleCreateGroup(const std::string& group, const std::string& usr);
 
 
 /**
  * 处理踢人请求
  * 踢完后对应的人失去权限
- * @param username 要踢谁？
+ * @param usr 要踢谁？
  */
-void handleKickGroup(const std::string& username);
+void handleKickGroup(const std::string& usr);
 
 
 /**
  * 处理塞口球的请求
  * 被塞口球的人失去权限，等同未加群的人
- * @param username 要禁言的人
+ * @param usr 要禁言的人
  */
-void handleMuteUser(const std::string& username);
+void handleMuteUser(const std::string& usr);
 
 
 /**
  * 为特定用户解除禁言
  * 解除禁言后的人恢复权限
- * @param username 被解除禁言的人
+ * @param usr 被解除禁言的人
  */
-void handleUnmuteUser(const std::string& username);
+void handleUnmuteUser(const std::string& usr);
 
 
 /**
  * 解散群聊
  * 等同于将所有人都取消权限
  * 需要判断是否为Owner
- * @param username 执行人名称
+ * @param usr 执行人名称
  */
-void handleDismissGroup(const std::string& username);
+void handleDismissGroup(const std::string& usr);
 
 /**
  * 验证客户端报文合法性
@@ -185,6 +185,7 @@ void handleDismissGroup(const std::string& username);
  * @param client_sock 客户端socket
  */
 void validateUserInput(const std::string& usr, const std::string& grp, SOCKET client_sock);
+
 
 /**
  * 帮助函数
@@ -197,3 +198,42 @@ void handleHelp();
  * 为当前用户启用权限
  */
 void handleJoinGroup(const std::string& usr);
+
+
+/**
+ * 离开群聊
+ * 为当前用户禁用权限
+ */
+void handleLeaveGroup(const std::string& usr);
+
+
+/**
+ * 展示所有连接的客户端
+ */
+void handleShowAllClient();
+
+
+/**
+ * 展示当前用户状态
+ * @param usr 用户名
+ */
+void handleShowUserStatus(const std::string& usr);
+
+
+/**
+ * 展示最近的20条聊天记录
+ * 读取文件
+ */
+void handleShowHistory();
+
+
+/**
+ * 展示有权限的用户
+ */
+void handleShowGroupUser();
+
+/**
+ * 客户端与服务器断开连接指令
+ * @param usr 要离线的用户名
+ */
+void handleQuit(const string& usr);

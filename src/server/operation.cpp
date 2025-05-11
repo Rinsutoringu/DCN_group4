@@ -6,7 +6,7 @@
 using namespace std;
 
 // 处理用户输入
-void handleUserInput(const std::string& usr, const std::string& grp, const std::string& msg) {
+void handleUserInput(const string& usr, const string& grp, const string& msg) {
     lock_guard<mutex> lock(client_mutex);
     // 传入用户名和群名
     // TODO 进行合法性查验
@@ -16,36 +16,73 @@ void handleUserInput(const std::string& usr, const std::string& grp, const std::
     // 使用宏定义来自由化处理逻辑
     HANDLE_COMMAND("/create", handleCreateGroup, grp, usr);
     HANDLE_COMMAND("/join", handleJoinGroup, usr);
-    HANDLE_COMMAND("/leave", handleMuteUser, usr);
-    HANDLE_COMMAND("/list_all_users", handleUnmuteUser, usr);
-    HANDLE_COMMAND("/userstatus", handleDismissGroup, usr);
-    HANDLE_COMMAND("/history", handleDismissGroup, usr);
-    HANDLE_COMMAND("/groupuser", handleDismissGroup, usr);
-    HANDLE_COMMAND("/mute", handleDismissGroup, usr);
-    HANDLE_COMMAND("/unmute", handleDismissGroup, usr);
-    HANDLE_COMMAND("/kick", handleDismissGroup, usr);
+    HANDLE_COMMAND("/leave", handleLeaveGroup, usr);
+    HANDLE_COMMAND("/list_all_users", handleShowAllClient);
+    HANDLE_COMMAND("/userstatus", handleShowUserStatus, usr);
+    HANDLE_COMMAND("/history", handleShowHistory);
+    HANDLE_COMMAND("/groupuser", handleShowGroupUser);
+    HANDLE_COMMAND("/mute", handleMuteUser, usr);
+    HANDLE_COMMAND("/unmute", handleUnmuteUser, usr);
+    HANDLE_COMMAND("/kick", handleKickGroup, usr);
     HANDLE_COMMAND("/dismiss", handleDismissGroup, usr);
-    HANDLE_COMMAND("/quit", handleDismissGroup, usr);
+    HANDLE_COMMAND("/quit", handleQuit, usr);
     HANDLE_COMMAND("/help", handleHelp);
 }
 
-void handleCreateGroup(const std::string& group, const std::string& username) {
+void handleCreateGroup(const string& group, const string& username) {
+
+    // 创建群组
+    lock_guard<mutex> lock(client_mutex);
+    if (group_members.find(group) == group_members.end()) {
+        group_members[group] = set<string>();
+        group_owners[group] = username;
+    }
+}
+
+void handleJoinGroup(const string& username) {
 
 }
 
-void handleJoinGroup(const std::string& username) {
+void handleLeaveGroup(const string& username) {
 
 }
 
-void handleMuteUser(const std::string& username) {
+void handleShowAllClient() {
 
 }
 
-void handleUnmuteUser(const std::string& username) {
+void handleShowUserStatus(const string& username) {
 
 }
 
-void handleDismissGroup(const std::string& username) {
+void handleShowHistory() {
 
 }
 
+void handleShowGroupUser() {
+
+}
+
+void handleMuteUser(const string& usr) {
+
+}
+
+void handleUnmuteUser(const string& usr) {
+
+}
+
+void handleKickGroup(const string& usr) {
+
+}
+
+void handleDismissGroup(const string& usr) {
+
+}
+
+void handleQuit(const string& usr) {
+
+}
+
+void handlehelp() {
+
+}
