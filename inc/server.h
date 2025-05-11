@@ -61,6 +61,7 @@ extern std::ofstream chatlog;
  */
 void sendToClient(SOCKET sock, const std::string& msg);
 
+
 /**
  * 指定群组，广播消息到所有在该群组中的客户端
  * @param group 群组名称
@@ -69,10 +70,12 @@ void sendToClient(SOCKET sock, const std::string& msg);
  */
 void broadcast(const std::string& group, const std::string& msg, const std::string& except = "");
 
+
 /**
  * 检查不活跃的用户
  */
 void checkInactiveUsers();
+
 
 /**
  * 处理客户端连接
@@ -80,11 +83,13 @@ void checkInactiveUsers();
  */
 void handleClient(SOCKET client_sock);
 
+
 /**
  * 获取当前时间戳
  * @return 当前时间戳字符串
  */
 std::string getTimestamp();
+
 
 /**
  * XOR加密函数
@@ -92,6 +97,7 @@ std::string getTimestamp();
  * @return 加密后的数据
  */
 std::string xorCipher(const std::string& data);
+
 
 /**
  * 判断用户是否是管理员
@@ -101,6 +107,7 @@ std::string xorCipher(const std::string& data);
  */
 bool is_Admin(const std::string& username);
 
+
 /**
  * 判断用户是否是群组持有者
  * @param username 用户名
@@ -108,9 +115,21 @@ bool is_Admin(const std::string& username);
  */
 bool is_Owner(const std::string& username);
 
-// 处理指令
+
+/**
+ * 处理踢人请求
+ * @param group 目标群组
+ * @param username 要踢谁？
+ */
 void handleLeaveGroup(const std::string& group, const std::string& username);
-void handleMuteUser(const std::string& group, const std::string& username);
+
+
+/**
+ * 处理塞口球的请求
+ * @param username 给谁塞口球？
+ */
+void handleMuteUser(const std::string& username);
+
 
 /**
  * 处理建群请求
@@ -118,3 +137,10 @@ void handleMuteUser(const std::string& group, const std::string& username);
  * @param username 用户名
  */
 void handleCreateGroup(const std::string& group, const std::string& username);
+
+/**
+ * 解除用户静音
+ * @param username 用户名
+ */
+void handleUnmuteUser(const std::string& username);
+

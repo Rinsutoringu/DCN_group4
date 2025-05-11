@@ -18,11 +18,6 @@ void handleCreateGroup(const std::string& group, const std::string& username) {
     printf("用户 %s 创建了群组 %s", username.c_str(), group.c_str());
 }
 
-/**
- * 处理踢人请求
- * @param group 目标群组
- * @param username 要踢谁？
- */
 void handleLeaveGroup(const std::string& group, const std::string& username) {
     // 先获取群组成员列表
     
@@ -34,34 +29,28 @@ void handleLeaveGroup(const std::string& group, const std::string& username) {
         return;
     }
     it->second.erase(username);
-
     // 判断列表是否为空
     if (!it->second.empty()) return;
     group_members.erase(it);
     group_owners.erase(group);
-
     // 把用户移除出了群组
     broadcast(group, username + " left the group.");
 }
 
-/**
- * 处理塞口球的请求
- * @param group 群组名称
- * @param username 给谁塞口球？
- */
-void handleMuteUser(const std::string& group, const std::string& username) {
-    // 先获取群组成员列表
-    auto it = group_members.find(group);
-    if (it == group_members.end()) {
-        printf("方法在group_members容器中未获得group对应值"); 
-        return;
+void handleMuteUser(const std::string& username) {
+    // 获取用户，设置静音
+    // TODO 客户端前端判定，当检测到被禁言时禁止用户输入
+    lock_guard<mutex> lock(client_mutex);
+    if (clients.count(username)) {
+        clients[username].muted = true;
+        sendToClient(clients[username].socket, "You have been muted.");
     }
-    // 将用户静音
-    {
-        lock_guard<mutex> lock(client_mutex);
-        if (clients.count(username)) {
-            clients[username].muted = true;
-            sendToClient(clients[username].socket, "You have been muted.");
-        }
+}
+
+void handleUnmuteUser(const std::string& username) {
+    lock_guard<mutex> lock(client_mutex);
+    if (clients.count(username)) {
+        clients[username].muted = false;
+        sendToClient(clients[username].socket, "You have been unmuted.");
     }
 }
