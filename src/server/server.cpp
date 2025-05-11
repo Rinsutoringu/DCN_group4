@@ -45,7 +45,7 @@ void sendToClient(SOCKET sock, const string& msg) {
 }
 
 /**
- * 广播消息到所有客户端
+ * 指定群组，广播消息到所有在该群组中的客户端
  * @param group 群组名称
  * @param msg 发送的消息
  * @param except 排除的用户
@@ -116,7 +116,7 @@ void handleClient(SOCKET client_sock) {
 
     string username = strtok(buffer, " ");
     string group = strtok(NULL, " ");
-    // 如果用户名和群组名为空，则关闭连接
+    // 合法性验证：如果用户名和群组名为空，则关闭连接
     {
         lock_guard<mutex> lock(client_mutex);
         if (username.empty() || group.empty())
@@ -127,7 +127,7 @@ void handleClient(SOCKET client_sock) {
         }
     }
 
-    // 检查用户名是否已存在
+    // 合法性验证：检查用户名是否已存在
     {
         lock_guard<mutex> lock(client_mutex);
         if (clients.count(username)) {
@@ -140,10 +140,14 @@ void handleClient(SOCKET client_sock) {
         if (group_owners.count(group) == 0)
             group_owners[group] = username;
     }
-
-    broadcast(group, username + " joined the group.", username);
-    sendToClient(client_sock, "You joined group [" + group + "] as " + username +
-        (group_owners[group] == username ? " (owner)." : "."));
+    
+    // 如果该用户合法，那么：
+    // 给group群组中的全部客户端广播加入信息
+    broadcast(group, 
+        username + " joined the group.", username);
+    // 给加入的那个客户端单独发送信息
+    sendToClient(client_sock,
+        "You joined group [" + group + "] as " + username + (group_owners[group] == username ? " (owner)." : "."));
 
     while (true) {
         int msg_len = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
@@ -160,6 +164,7 @@ void handleClient(SOCKET client_sock) {
         buffer[msg_len] = '\0';
         string msg = buffer;
 
+        // 对于指令的处理
         {
             lock_guard<mutex> lock(client_mutex);
             if (clients[username].muted) {

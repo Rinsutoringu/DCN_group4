@@ -4,15 +4,7 @@
         {
             "type": "shell",
             "label": "Build Server",
-            "command": "D:\\environment\\winlibs-x86_64-posix-seh-gcc-14.2.0-mingw-w64msvcrt-12.0.0-r3\\mingw64\\bin\\g++.exe",
-            "args": [
-                "-g", // 启用调试符号
-                "-O0", // 禁用优化
-                "-I", "${workspaceFolder}/inc", // 添加头文件目录
-                "${workspaceFolder}/src/server.cpp", // 源文件
-                "-o", "${workspaceFolder}/server.exe", // 输出文件
-                "-lws2_32" // 链接 Winsock 库
-            ],
+            "command": "${workspaceFolder}/build_server.bat",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -20,20 +12,12 @@
             "problemMatcher": [
                 "$gcc"
             ],
-            "detail": "用于编译 src/server.cpp 的任务"
+            "detail": "通过批处理脚本编译 src/server 目录下的所有 .cpp 文件"
         },
         {
             "type": "shell",
             "label": "Build Client",
-            "command": "D:\\environment\\winlibs-x86_64-posix-seh-gcc-14.2.0-mingw-w64msvcrt-12.0.0-r3\\mingw64\\bin\\g++.exe",
-            "args": [
-                "-g", // 启用调试符号
-                "-O0", // 禁用优化
-                "-I", "${workspaceFolder}/inc", // 添加头文件目录
-                "${workspaceFolder}/src/client.cpp", // 源文件
-                "-o", "${workspaceFolder}/client.exe", // 输出文件
-                "-lws2_32" // 链接 Winsock 库
-            ],
+            "command": "${workspaceFolder}/build_client.bat",
             "group": {
                 "kind": "build",
                 "isDefault": false
@@ -41,7 +25,7 @@
             "problemMatcher": [
                 "$gcc"
             ],
-            "detail": "用于编译 src/client.cpp 的任务"
+            "detail": "通过批处理脚本编译 src/client 目录下的所有 .cpp 文件"
         }
     ]
 }
