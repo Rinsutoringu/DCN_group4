@@ -179,6 +179,9 @@ void handleUnmuteUser(const std::string& username);
 void handleDismissGroup(const std::string& username);
 
 /**
- * 获取用户名
+ * 验证客户端报文合法性
+ * @param usr 用户名
+ * @param grp 群组名
+ * @param client_sock 客户端socket
  */
-std::string get_UserName(const std::string& username);
+void validateUserInput(const string& usr, const string& grp, SOCKET client_sock);

@@ -107,26 +107,11 @@ void handleClient(SOCKET client_sock) {
         // 去掉消息前面的空格
         if(!msg.empty() && msg[0] == ' ') msg = msg.substr(1);
     }
+    // 验证合法性
+    validateUserInput(usr, grp, client_sock);
 
-    // 合法性验证：检查用户名和群组名是否为空
     {
-        lock_guard<mutex> lock(client_mutex);
-        if (usr.empty() || grp.empty())
-        {
-            sendToClient(client_sock, "Error: Username and group cannot be empty.");
-            closesocket(client_sock);
-            return;
-        }
-    }
 
-    // 合法性验证：检查用户名是否已存在
-    {
-        lock_guard<mutex> lock(client_mutex);
-        if (clients.count(usr)) {
-            sendToClient(client_sock, "Error: Username already in use.");
-            closesocket(client_sock);
-            return;
-        }
         // 完成合法性验证，将用户信息添加到客户端列表
         clients[usr] = {client_sock, usr, grp, false, time(nullptr)};
         group_members[grp].insert(usr);
