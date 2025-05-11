@@ -7,12 +7,11 @@ using namespace std;
 void handleUserInput(const string& usr, const string& grp, const string& msg) {
     lock_guard<mutex> lock(client_mutex);
     // 传入用户名和群名
-    // TODO 进行合法性查验
-
 
     // 根据用户的输入调用不同函数
     // 如: /kick
     // 使用宏定义来自由化处理逻辑
+    broadcast("User " + usr + " sent a message: " + msg);
     HANDLE_COMMAND("/create", handleCreateGroup, grp, usr);
     HANDLE_COMMAND("/join", handleJoinGroup, grp, usr);
     HANDLE_COMMAND("/leave", handleLeaveGroup, usr);
@@ -262,13 +261,21 @@ void handleHelp(const string& usr) {
 
 
 void checkInactiveUsers() {
-    // 踢出超时用户
+    while (true) {
+        {
+            // 锁定客户端列表
+            lock_guard<mutex> lock(client_mutex);
+            for (auto it = clients.begin(); it != clients.end();) {
+                if (it->second.last_activity < time(nullptr) - INACTIVITY_TIMEOUT) {
+                    sendToClient(it->second.socket, "You have been inactive for too long. You will be disconnected.");
+                    it = clients.erase(it); // 移除超时用户
+                } else {
+                    ++it;
+                }
+            }
+        }
 
-    lock_guard<mutex> lock(client_mutex);
-    for (auto it = clients.begin(); it != clients.end();) {
-        if (it->second.last_activity < time(nullptr) - INACTIVITY_TIMEOUT) {
-            sendToClient(it->second.socket, "You have been inactive for too long. You will be disconnected.");
-            it = clients.erase(it);
-        } else ++it;
+        // 等待一段时间再检查
+        this_thread::sleep_for(chrono::seconds(10)); // 每 10 秒检查一次
     }
 }

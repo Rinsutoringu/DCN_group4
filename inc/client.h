@@ -31,22 +31,22 @@ private:
     // Winsock数据结构
     WSADATA wsaData;
     // 输出流锁
-    mutex cout_mutex;
+    std::mutex cout_mutex;
     // 用户名
-    string username;
+    std::string username;
 
     /**
      * XOR加密
      * @param data 要加密的数据
      * @return 加密后的数据
      */
-    string xorCipher(const string& data);
+    std::string xorCipher(const std::string& data);
 
     /**
      * 发送消息
      * @param message 要发送的消息
      */
-    void sendMessage(const string& message);
+    void sendMessage(const std::string& message);
 
     /**
      * 接收消息
@@ -62,4 +62,10 @@ private:
      * 显示帮助
      */
     void showHelp();
+
+    /**
+     * 检查连接状态
+     * @return 掉了就是false
+     */
+    bool connStatus();
 };

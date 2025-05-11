@@ -101,6 +101,10 @@ void ChatClient::handleConnection() {
             exit(0);
         }
 
+        // 检查是否与服务器保持连接
+
+        
+
         sendMessage(input);
     }
 }
@@ -168,6 +172,11 @@ void ChatClient::start() {
     sendMessage(username + " " + group);
     handleConnection();
 }
+
+// bool connStatus() {
+//     lock_guard<mutex> lock(client_mutex);
+//     return clients.count(username) > 0;
+// }
 
 int main(int argc, char** argv) {
     if (argc != 3) {

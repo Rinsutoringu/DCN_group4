@@ -65,10 +65,6 @@ extern std::ofstream chatlog;
 
 /*#####################函数声明#####################*/
 
-// TODO print到log文件的函数
-void printToLogFile(const std::string& msg);
-
-
 /**
  * 发送信息到指定客户端
  * @param sock 客户端socket
