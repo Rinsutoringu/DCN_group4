@@ -1,5 +1,4 @@
 #include "server.h"
-
 // 使用std作为命名空间
 using namespace std;
 
@@ -15,10 +14,10 @@ bool is_Admin(const std::string& username) {
 
 bool is_Owner(const std::string& username) {
     // 判断用户是否是群组持有者
-    for (const auto& group : group_owners) {
-        if (group.second == username) {
-            return true;
-        }
+    // 因为其实最多只能创建一个群组，所以直接获取group_owners的第二个元素即可。
+    auto it = group_owners.find(username);
+    if (it != group_owners.end()) {
+        return it->second == username;
     }
     return false;
 }

@@ -54,6 +54,10 @@ extern std::ofstream chatlog;
 
 /*#####################函数声明#####################*/
 
+// TODO print到log文件的函数
+void printToLogFile(const std::string& msg);
+
+
 /**
  * 发送信息到客户端
  * @param sock 客户端socket
@@ -117,11 +121,19 @@ bool is_Owner(const std::string& username);
 
 
 /**
+ * 处理建群请求
+ * @param group 群名
+ * @param username 用户名
+ */
+void handleCreateGroup(const std::string& group, const std::string& username);
+
+
+/**
  * 处理踢人请求
  * @param group 目标群组
  * @param username 要踢谁？
  */
-void handleLeaveGroup(const std::string& group, const std::string& username);
+void handleKickGroup(const std::string& group, const std::string& username);
 
 
 /**
@@ -132,15 +144,16 @@ void handleMuteUser(const std::string& username);
 
 
 /**
- * 处理建群请求
- * @param group 群名
- * @param username 用户名
- */
-void handleCreateGroup(const std::string& group, const std::string& username);
-
-/**
  * 解除用户静音
  * @param username 用户名
  */
 void handleUnmuteUser(const std::string& username);
 
+
+
+// TODO /dismiss 解散群聊
+// TODO /list_all_users 展示所有在线
+// TODO /groupuser 展示群组成员
+// TODO /userstatus 用户状态
+// TODO /history 展示最近20条聊天记录
+// TODO /quit 把自己从群组中踢出
