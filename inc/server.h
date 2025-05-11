@@ -14,6 +14,8 @@
 #include <fstream>
 #include <exception>
 #include <deque>
+#include <condition_variable>
+#include <queue>
 
 #define XOR_KEY 0xAB
 #define MAX_CLIENTS 100
@@ -60,8 +62,18 @@ extern std::map<std::string, std::string> group_owners;
 extern std::map<std::string, ClientInfo> clients;
 // 保护客户端列表的互斥锁
 extern std::recursive_mutex client_mutex;
+// 用于输入进程的互斥锁
+extern std::mutex input_mutex;
 // 聊天记录文件
 extern std::ofstream chatlog;
+// 通知其他进程：获取到了消息
+extern std::condition_variable input_cv;
+// 队列，存储输入消息
+extern std::queue<std::string> input_queue;
+// 标志位，表示是否退出
+extern bool exit_flag;
+// 全局的通知用变量
+extern std::condition_variable input_cv;
 
 /*#####################函数声明#####################*/
 
@@ -255,3 +267,8 @@ ClientInfo* getClient(const std::string& usr);
  * @return 如果被禁言返回1，没禁言返回0，出错返回-1
  */
 int muteCheck(const std::string& usr);
+
+/**
+ * 阻塞式获取客户端socket通信
+ */
+void userInputThread(SOCKET client_sock, std::string& msg);

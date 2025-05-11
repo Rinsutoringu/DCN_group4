@@ -6,6 +6,8 @@
 #include <string>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
+#include <queue>
 
 #define XOR_KEY 0xAB
 
@@ -32,8 +34,15 @@ private:
     WSADATA wsaData;
     // 输出流锁
     std::mutex cout_mutex;
+    std::mutex input_mutex;
     // 用户名
     std::string username;
+    // 通知其他进程：获取到了消息
+    std::condition_variable input_cv;
+    // 队列，存储输入消息
+    std::queue<std::string> input_queue;
+    // 标志位，表示是否退出
+    bool exit_flag = false;
 
     /**
      * XOR加密
@@ -68,4 +77,6 @@ private:
      * @return 掉了就是false
      */
     bool connStatus();
+
+    void getMessage();
 };

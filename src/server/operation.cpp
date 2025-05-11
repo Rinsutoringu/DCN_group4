@@ -90,6 +90,7 @@ void handleJoinGroup(const string& group, const string& usr) {
     if (!client) return;
 
     // 将该用户结构体中in_group置true
+    sendToClient(client->socket, "joinsuccess");
     sendToClient(client->socket, "You joined the group " + client->group);
     client->group = group;
 }
@@ -278,6 +279,7 @@ void checkInactiveUsers() {
             for (auto it = clients.begin(); it != clients.end();) {
                 if (it->second.last_activity < time(nullptr) - INACTIVITY_TIMEOUT) {
                     sendToClient(it->second.socket, "You have been inactive for too long. You will be disconnected.");
+                    sendToClient(it->second.socket, "CMD_KICKOUT");
                     it = clients.erase(it); // 移除超时用户
                 } else {
                     ++it;

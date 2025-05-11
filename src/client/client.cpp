@@ -51,30 +51,28 @@ void ChatClient::sendMessage(const string& message) {
 }
 
 void ChatClient::receiveMessage() {
+    cerr << "receivemessage上锁" << endl;
+    lock_guard<mutex> lock(cout_mutex);
+    cerr << "上锁成功" << endl;
+
     char buffer[1024];
     while (true) {
+
+        // 接收消息，存入message
         int msg_len = recv(connect_sock, buffer, sizeof(buffer) - 1, 0);
         if (msg_len > 0) {
             for (int i = 0; i < msg_len; ++i) buffer[i] ^= XOR_KEY;
             buffer[msg_len] = '\0';
             string msg = buffer;
-
-            lock_guard<mutex> lock(cout_mutex);
             cout << msg << endl;
             
-            if (msg.find("CMD_KICK:") != string::npos) {
-                cout << "You are kicked.\nEnter command (/create, /join): ";
-            } else {
-                cout << "Enter a message: ";
-            }
+            if (msg.find("CMD_KICKOUT:") != string::npos) cout << "You are kicked.\nEnter command (/create, /join): ";
             cout.flush();
         }
         else if (msg_len == 0) {
-            lock_guard<mutex> lock(cout_mutex);
             cout << "\nDisconnected from server." << endl;
             exit(0);
         } else {
-            lock_guard<mutex> lock(cout_mutex);
             cerr << "\nReceive failed!" << endl;
             exit(-1);
         }
@@ -82,31 +80,34 @@ void ChatClient::receiveMessage() {
 }
 
 void ChatClient::handleConnection() {
-    // 把这个任务与接收消息的线程关联起来
+    // 创建接收消息线程
     thread receiver(&ChatClient::receiveMessage, this);
+    // 创建用户输入线程
+    thread input_thread(&ChatClient::getMessage, this);
 
-    string input;
+    
     while (true) {
+        string input;
         {
-            lock_guard<mutex> lock(cout_mutex);
-            cout << "Enter a message: ";
+            unique_lock<mutex> lock(input_mutex);
+            input_cv.wait(lock, [&]() { return !input_queue.empty() || exit_flag; });
+
+            if (exit_flag) {
+                sendMessage("/quit");
+                closesocket(connect_sock);
+                WSACleanup();
+                break;
+            }
+
+            input = input_queue.front();
+            input_queue.pop();
         }
-        getline(cin, input);
 
-        // 退出逻辑处理
-        if (input == "/quit") {
-            sendMessage("/quit");
-            closesocket(connect_sock);
-            WSACleanup();
-            exit(0);
-        }
-
-        // 检查是否与服务器保持连接
-
-        
-
+        // 发送消息到服务器
         sendMessage(input);
     }
+
+    input_thread.join(); // 等待输入线程结束
 }
 
 void ChatClient::showHelp() {
@@ -171,6 +172,30 @@ void ChatClient::start() {
     }
     sendMessage(username + " " + group);
     handleConnection();
+}
+
+void ChatClient::getMessage() {
+    string input;
+    while (true) {
+        // 为输入消息创建锁
+        {
+            lock_guard<mutex> lock(cout_mutex);
+            cout << "Enter a message: ";
+        }
+        getline(cin, input);
+
+        // 处理退出指令
+        {
+            lock_guard<mutex> lock(input_mutex);
+            if (input == "/quit") {
+                exit_flag = true;
+                input_cv.notify_all();
+                break;
+            }
+            input_queue.push(input);
+        }
+        input_cv.notify_one(); // 通知主线程有新消息
+    }
 }
 
 int main(int argc, char** argv) {
