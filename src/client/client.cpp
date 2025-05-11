@@ -1,36 +1,11 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 
-#include <winsock2.h>
-#include <iostream>
-#include <vector>
-#include <string>
-#include <thread>
-#include <mutex>
+#include "client.h"
 
 #pragma comment(lib, "ws2_32.lib")
 using namespace std;
 
-#define XOR_KEY 0xAB
-
-class ChatClient {
-public:
-    ChatClient(const char* server_name, unsigned short port);
-    void start();
-
-private:
-    SOCKET connect_sock;
-    struct sockaddr_in server_addr;
-    WSADATA wsaData;
-    mutex cout_mutex;
-    string username;
-
-    string xorCipher(const string& data);
-    void sendMessage(const string& message);
-    void receiveMessage();
-    void handleConnection();
-    void showHelp();
-};
 
 ChatClient::ChatClient(const char* server_name, unsigned short port) {
     WSAStartup(MAKEWORD(2, 2), &wsaData);
