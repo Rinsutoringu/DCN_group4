@@ -36,7 +36,7 @@ void sendToClient(SOCKET sock, const string& msg) {
 }
 
 
-void broadcast(const string& group, const string& msg, const string& except = "") {
+void broadcast(const string& group, const string& msg, const string& except) {
     // 进程锁
     lock_guard<mutex> lock(client_mutex);
     if (group_members.find(group) == group_members.end()) return;

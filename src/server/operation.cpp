@@ -2,6 +2,8 @@
 // #include "server.cpp"
 #include "server.h"
 
+// 使用std作为命名空间
+using namespace std;
 
 void handleCreateGroup(const std::string& group, const std::string& username) {
     // // 先判断用户是否是管理员
@@ -54,3 +56,12 @@ void handleMuteUser(const std::string& group, const std::string& username) {
         printf("方法在group_members容器中未获得group对应值"); 
         return;
     }
+    // 将用户静音
+    {
+        lock_guard<mutex> lock(client_mutex);
+        if (clients.count(username)) {
+            clients[username].muted = true;
+            sendToClient(clients[username].socket, "You have been muted.");
+        }
+    }
+}

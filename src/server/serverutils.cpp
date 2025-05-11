@@ -1,5 +1,7 @@
 #include "server.h"
 
+// 使用std作为命名空间
+using namespace std;
 
 bool is_Admin(const std::string& username) {
     // 判断用户是否是管理员
