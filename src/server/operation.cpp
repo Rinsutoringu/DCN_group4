@@ -32,29 +32,40 @@ void handleUserInput(const string& usr, const string& grp, const string& msg) {
     broadcast(grp, usr + ": " + msg);
 }
 
-void handleCreateGroup(const string& group, const string& username) {
+
+void handleCreateGroup(const string& group, const string& usr) {
 
     // 创建群组
     lock_guard<mutex> lock(client_mutex);
-    if (group_members.find(group) == group_members.end()) {
-        group_members[group] = set<string>();
-        group_owners[group] = username;
+    // 从clients获取当前连接的用户
+    ClientInfo* client = getClient(usr);
+    if (!client) {
+        cerr << "User " << usr << " not found." << endl;
+        return;
     }
+    // 将该用户结构体中in_group置true
+    sendToClient(client->socket,"A group named " + group + " created successfully!");
+    client->in_group = true;
+    client->group = group;
 }
 
-void handleJoinGroup(const string& username) {
+
+void handleJoinGroup(const string& group, const string& usr) {
     // 获取用户
-    auto it = clients.find(username);
+    auto it = clients.find(usr);
     if (it == clients.end()) {
-        cerr << "User " << username << " not found." << endl;
+        cerr << "User " << usr << " not found." << endl;
         return;
     }
     ClientInfo& client = it->second;
-    if (client.group.empty()) {
-        cerr << "User " << username << " is not in a group." << endl;
+    if (client.in_group) {
+        sendToClient(client.socket, "You are already in a group.");
         return;
     }
-    group_members[client.group].insert(client.username);
+    // 将该用户结构体中in_group置true
+    sendToClient(client.socket, "You joined the group " + client.group);
+    client.in_group = true;
+    client.group = group;
 }
 
 void handleLeaveGroup(const string& username) {

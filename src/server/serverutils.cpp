@@ -27,6 +27,13 @@ void validateUserInput(const string& usr, const string& grp, SOCKET client_sock)
     return;
 }
 
+// 私聊
+void sendToClient(SOCKET sock, const string& msg) {
+    // 执行信息加密
+    string encrypted = xorCipher(msg);
+    send(sock, encrypted.c_str(), encrypted.size(), 0);
+}
+
 // 广播
 void broadcast(const string& msg) {
     // 进程锁
@@ -38,4 +45,18 @@ void broadcast(const string& msg) {
     for (const auto& [username, client] : clients) {
         sendToClient(client.socket, timestamped_msg);
     }
+}
+
+ClientInfo* getClient(const string& usr) {
+    auto it = clients.find(usr);
+    if (it == clients.end()) {
+        cerr << "User " << usr << " not found." << endl;
+        return nullptr; // Return nullptr if user not found
+    }
+    ClientInfo& client = it->second;
+    if (client.in_group) {
+        sendToClient(client.socket, "You are already in a group.");
+        return nullptr;
+    }
+    return &client;
 }

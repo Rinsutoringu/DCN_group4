@@ -49,7 +49,8 @@ struct ClientInfo
     
     // 结构体构造函数
     ClientInfo(SOCKET sock, const std::string& usr, const std::string& grp_name, bool mute, time_t last_act)
-        : socket(sock), username(usr), group(grp_name), muted(mute), last_activity(last_act) {}
+        : socket(sock), username(usr), group(grp_name), muted(mute), last_activity(last_act) {};
+    ClientInfo() {};
 };
 
 /*#####################声明全局变量#####################*/
@@ -201,7 +202,7 @@ void handleHelp();
  * 加入群聊
  * 为当前用户启用权限
  */
-void handleJoinGroup(const std::string& usr);
+void handleJoinGroup(const string& group, const string& usr);
 
 
 /**
@@ -241,3 +242,9 @@ void handleShowGroupUser();
  * @param usr 要离线的用户名
  */
 void handleQuit(const string& usr);
+
+/**
+ * 根据用户名获取特定的Client结构体
+ * @param usr 需要获取结构体的用户名
+ */
+ClientInfo* getClient(const string& usr);

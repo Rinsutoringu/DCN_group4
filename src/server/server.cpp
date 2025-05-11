@@ -72,17 +72,17 @@ void handleClient(SOCKET client_sock) {
     // 给加入的那个客户端单独发送信息
     sendToClient(client_sock, "You joined group [" + grp + "] as " + usr + (group_owners[grp] == usr ? " (owner)." : "."));
 
-    // 死循环 不断获取用户输入内容，判断该如何处理
-    while (true) {
-        handleUserInput(usr, grp, msg);
+
+    /*#################核心指令处理逻辑#################*/
+    while (true) {handleUserInput(usr, grp, msg);}
+
     {
         lock_guard<mutex> lock(client_mutex);
-        group_members[grp].erase(usr);
+        
         // 断开连接时，删除客户端
         clients.erase(usr);
     }
     closesocket(client_sock);
-}
 }
 
 int main() {
