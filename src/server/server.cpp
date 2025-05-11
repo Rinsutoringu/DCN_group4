@@ -31,6 +31,7 @@ string getTimestamp() {
 }
 
 void sendToClient(SOCKET sock, const string& msg) {
+    // 执行信息加密
     string encrypted = xorCipher(msg);
     send(sock, encrypted.c_str(), encrypted.size(), 0);
 }
@@ -92,11 +93,13 @@ void handleClient(SOCKET client_sock) {
 
     int len = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
     if (len <= 0) return;
-    for (int i = 0; i < len; ++i) buffer[i] ^= XOR_KEY;
-    buffer[len] = '\0';
 
-    string username = strtok(buffer, " ");
-    string group = strtok(NULL, " ");
+    istringstream iss(xorCipher(std::string(buffer, len)));
+
+    string usr, grp, msg;
+    iss >> usr >> grp;
+    getline(iss, msg);
+
     // 合法性验证：如果用户名和群组名为空，则关闭连接
     {
         lock_guard<mutex> lock(client_mutex);
@@ -130,7 +133,10 @@ void handleClient(SOCKET client_sock) {
     sendToClient(client_sock,
         "You joined group [" + group + "] as " + username + (group_owners[group] == username ? " (owner)." : "."));
 
+    // 死循环 不断获取用户输入内容，判断该如何处理
     while (true) {
+        
+        // 获取消息长度
         int msg_len = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
         if (msg_len <= 0) break;
 
@@ -139,7 +145,7 @@ void handleClient(SOCKET client_sock) {
             lock_guard<mutex> lock(client_mutex);
             clients[username].last_activity = time(nullptr);
         }
-        // TODO 格式化到这里为止
+        // TODO 昨晚干到这里
 
         for (int i = 0; i < msg_len; ++i) buffer[i] ^= XOR_KEY;
         buffer[msg_len] = '\0';
@@ -172,7 +178,7 @@ void handleClient(SOCKET client_sock) {
                 continue;
             }
         }
-
+        // 也是对指令的处理
         if (msg == "/quit") {
             break;
         } else if (msg == "/leave") {
@@ -300,6 +306,7 @@ void handleClient(SOCKET client_sock) {
                 (history.empty() ? "No history yet" : history));
             continue;
         } else {
+            // 如果不是指令，那么一定是用户说话了
             broadcast(group, username + ": " + msg, username);
         }
     }
@@ -313,16 +320,19 @@ void handleClient(SOCKET client_sock) {
 }
 
 int main() {
+    /*#################初始化#################*/
+    // 初始化套接字
     WSADATA wsa;
     WSAStartup(MAKEWORD(2, 2), &wsa);
 
-    // Open chat log file
+    // 打开chatlog文件
     chatlog.open("chatlog.txt", ios::app);
     if (!chatlog.is_open()) {
         cerr << "Failed to open chat log file!" << endl;
         return -1;
     }
 
+    // 创建服务器套接字,并在端口监听
     SOCKET server_sock = socket(AF_INET, SOCK_STREAM, 0);
     sockaddr_in server_addr = { AF_INET, htons(8888), INADDR_ANY };
     bind(server_sock, (sockaddr*)&server_addr, sizeof(server_addr));
@@ -331,13 +341,20 @@ int main() {
     cout << "Server started on port 8888..." << endl;
     cout << "Chat history will be saved to chatlog.txt" << endl;
 
+    // 把checkInactiveUsers函数扔到后台线程
     thread(checkInactiveUsers).detach();
 
+    /*#################主循环#################*/
     while (true) {
+        // 客户端发起连接请求的时候，这个进程会结束阻塞
+        // 创建新的线程来处理客户端连接
         SOCKET client = accept(server_sock, nullptr, nullptr);
+        // 拉起一个新的handleClient进程
+        // 把刚创建的client对象作为参数传入
         thread(handleClient, client).detach();
     }
 
+    /*#################服务器关闭流程#################*/
     chatlog.close();
     closesocket(server_sock);
     WSACleanup();

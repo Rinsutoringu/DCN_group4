@@ -21,3 +21,21 @@ bool is_Owner(const std::string& username) {
     }
     return false;
 }
+
+string get_GroupName(const std::string& username) {
+    // 获取用户所在群组的名称
+    auto it = clients.find(username);
+    if (it != clients.end()) {
+        return it->second.group;
+    }
+    return "";
+}
+
+string get_UserName(const std::string& username) {
+    // 获取用户的名称
+    auto it = clients.find(username);
+    if (it != clients.end()) {
+        return it->second.username;
+    }
+    return "";
+}

@@ -16,8 +16,14 @@
 
 #define XOR_KEY 0xAB
 #define MAX_CLIENTS 100
-#define INACTIVITY_TIMEOUT 300 // 5 minutes in seconds
+#define INACTIVITY_TIMEOUT 300 
 
+// 使用宏处理用户指令，超级优雅！
+#define HANDLE_COMMAND(cmd, func) \
+    if (msg.rfind(cmd, 0) == 0) { \
+        func(msg.substr(sizeof(cmd) - 1)); \
+        return; \
+    }
 
 /*#####################客户端信息结构体#####################*/
 
@@ -59,20 +65,23 @@ void printToLogFile(const std::string& msg);
 
 
 /**
- * 发送信息到客户端
+ * 发送信息到指定客户端
  * @param sock 客户端socket
  * @param msg 发送的消息
  */
 void sendToClient(SOCKET sock, const std::string& msg);
 
+/**
+ * 发送信息给有权限的客户端
+ */
+void sendToGroup(const std::string& msg);
+
 
 /**
- * 指定群组，广播消息到所有在该群组中的客户端
- * @param group 群组名称
+ * 发送消息给所有客户端
  * @param msg 发送的消息
- * @param except 排除的用户
  */
-void broadcast(const std::string& group, const std::string& msg, const std::string& except = "");
+void broadcast(const std::string& msg);
 
 
 /**
@@ -120,8 +129,17 @@ bool is_Admin(const std::string& username);
 bool is_Owner(const std::string& username);
 
 
+
+/**
+ * 处理用户输入
+ * @param msg 用户输入的消息
+ */
+void handleUserInput(string msg);
+
 /**
  * 处理建群请求
+ * 现在只能建一个群，建群的人将成为Owner
+ * 建群后获得权限
  * @param group 群名
  * @param username 用户名
  */
@@ -130,30 +148,37 @@ void handleCreateGroup(const std::string& group, const std::string& username);
 
 /**
  * 处理踢人请求
- * @param group 目标群组
+ * 踢完后对应的人失去权限
  * @param username 要踢谁？
  */
-void handleKickGroup(const std::string& group, const std::string& username);
+void handleKickGroup(const std::string& username);
 
 
 /**
  * 处理塞口球的请求
- * @param username 给谁塞口球？
+ * 被塞口球的人失去权限，等同未加群的人
+ * @param username 要禁言的人
  */
 void handleMuteUser(const std::string& username);
 
 
 /**
- * 解除用户静音
- * @param username 用户名
+ * 为特定用户解除禁言
+ * 解除禁言后的人恢复权限
+ * @param username 被解除禁言的人
  */
 void handleUnmuteUser(const std::string& username);
 
 
+/**
+ * 解散群聊
+ * 等同于将所有人都取消权限
+ * 需要判断是否为Owner
+ * @param username 执行人名称
+ */
+void handleDismissGroup(const std::string& username);
 
-// TODO /dismiss 解散群聊
-// TODO /list_all_users 展示所有在线
-// TODO /groupuser 展示群组成员
-// TODO /userstatus 用户状态
-// TODO /history 展示最近20条聊天记录
-// TODO /quit 把自己从群组中踢出
+/**
+ * 获取用户名
+ */
+std::string get_UserName(const std::string& username);

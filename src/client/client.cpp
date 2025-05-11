@@ -6,7 +6,7 @@
 #pragma comment(lib, "ws2_32.lib")
 using namespace std;
 
-
+// 构造函数
 ChatClient::ChatClient(const char* server_name, unsigned short port) {
     WSAStartup(MAKEWORD(2, 2), &wsaData);
 
@@ -30,6 +30,7 @@ ChatClient::ChatClient(const char* server_name, unsigned short port) {
     }
 }
 
+// 加密算法
 string ChatClient::xorCipher(const string& data) {
     string res = data;
     for (auto& c : res) {
