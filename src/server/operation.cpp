@@ -28,11 +28,23 @@ void handleUserInput(const string& usr, const string& grp, const string& msg) {
     HANDLE_COMMAND("/help", handleHelp, usr);
 
     // 如果用户的发言未匹配上方指令，那么按照发言处理
-    sendToGroup(grp, usr + ": " + msg);
+
+    // 判断用户有没有被禁言
+    {
+        lock_guard<mutex> lock(client_mutex);
+        ClientInfo* client = getClient(usr);
+        int muteStatus = muteCheck(client->username);
+        sendToClient(client->socket, "You are muted.");
+        if (muteStatus != 0) return;
+    }
+
     // 存入chatlog文件
-    chatlog << getTimestamp() + " " + usr + ": " + msg << endl;
-    // 文件操作错误处理
-    if (chatlog.fail()) cerr << "Error writing to chatlog file." << endl;
+    {
+        lock_guard<mutex> lock(client_mutex);
+        sendToGroup(grp, usr + ": " + msg);
+        chatlog << getTimestamp() + " " + usr + ": " + msg << endl;
+        if (chatlog.fail()) cerr << "Error writing to chatlog file." << endl;
+    }
 }
 
 

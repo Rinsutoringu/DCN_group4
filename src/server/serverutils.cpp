@@ -76,7 +76,7 @@ ClientInfo* getClient(const string& usr) {
 int muteCheck(const std::string& usr) {
     lock_guard<mutex> lock(client_mutex);
     ClientInfo* client = getClient(usr);
-    if (!client) return -1;
-    if (client->muted) return 1;
+    if (!client) return -1; // 没找到套接字返回-1
+    if (client->muted) return 1; // 被禁言了是true
     return 0;
 }
