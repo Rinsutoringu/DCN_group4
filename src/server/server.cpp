@@ -12,8 +12,7 @@ map<std::string, std::string> group_owners;
 map<std::string, ClientInfo> clients;
 recursive_mutex client_mutex;
 ofstream chatlog;
-std::mutex input_mutex;
-std::condition_variable input_cv;
+
 
 
 string xorCipher(const string& data) {
@@ -37,19 +36,16 @@ string getTimestamp() {
 void handleClient(SOCKET client_sock) {
     // DEBUG
     cerr << "客户端线程启动成功" << endl;
-    char buffer[1024];
-    cerr << "等待客户端消息..." << endl;
-        thread inputThread(userInputThread, client_sock, buffer);
-    
-    
     string usr, grp, msg;
-    
+    char buffer[1024];
     // 获取客户端报文并进行处理
     {
         cerr << "线程 " << this_thread::get_id() << " 尝试获取锁" << endl;
         lock_guard<recursive_mutex> lock(client_mutex);
         cerr << "线程 " << this_thread::get_id() << " 成功获取锁" << endl;
-        istringstream iss(xorCipher(buffer));
+        int len = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
+        if (len <= 0) return;
+        istringstream iss(xorCipher(std::string(buffer, len))); // 解密
         iss >> usr >> grp; // 流式切割报文
         getline(iss, msg);
         if(!msg.empty() && msg[0] == ' ') msg = msg.substr(1); // 去掉消息前面的空格
@@ -78,10 +74,6 @@ void handleClient(SOCKET client_sock) {
     while (true) {
         // DEBUG
         cerr << "等待用户输入..." << endl;
-    {
-        unique_lock<mutex> lock(input_mutex);
-        input_cv.wait(lock, [&]() { return !msg.empty(); }); // 等待消息非空
-    }
         handleUserInput(usr, grp, msg);
         sendToClient(client_sock, "You sent a message: " + msg);
     }
@@ -89,8 +81,8 @@ void handleClient(SOCKET client_sock) {
     // 退出处置
     {
         cerr << "线程 " << this_thread::get_id() << " 尝试获取锁" << endl;
-        lock_guard<recursive_mutex> lock(client_mutex);
-        cerr << "线程 " << this_thread::get_id() << " 成功获取锁" << endl;
+lock_guard<recursive_mutex> lock(client_mutex);
+cerr << "线程 " << this_thread::get_id() << " 成功获取锁" << endl;
         clients.erase(usr);
     }
     closesocket(client_sock);
