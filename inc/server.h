@@ -19,9 +19,9 @@
 #define INACTIVITY_TIMEOUT 300 
 
 // 使用宏处理用户指令，超级优雅！
-#define HANDLE_COMMAND(cmd, func) \
+#define HANDLE_COMMAND(cmd, func, ...) \
     if (msg.rfind(cmd, 0) == 0) { \
-        func(msg.substr(sizeof(cmd) - 1)); \
+        func(__VA_ARGS__); \
         return; \
     }
 
@@ -129,12 +129,12 @@ bool is_Admin(const std::string& username);
 bool is_Owner(const std::string& username);
 
 
-
 /**
  * 处理用户输入
  * @param msg 用户输入的消息
  */
-void handleUserInput(string msg);
+void handleUserInput(const std::string& usr, const std::string& grp, const std::string& msg);
+
 
 /**
  * 处理建群请求
@@ -184,4 +184,16 @@ void handleDismissGroup(const std::string& username);
  * @param grp 群组名
  * @param client_sock 客户端socket
  */
-void validateUserInput(const string& usr, const string& grp, SOCKET client_sock);
+void validateUserInput(const std::string& usr, const std::string& grp, SOCKET client_sock);
+
+/**
+ * 帮助函数
+ */
+void handleHelp();
+
+
+/**
+ * 加入群聊
+ * 为当前用户启用权限
+ */
+void handleJoinGroup(const std::string& usr);
