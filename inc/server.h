@@ -85,7 +85,7 @@ void sendToGroup(const std::string& msg);
  * 发送消息给所有客户端
  * @param msg 发送的消息
  */
-void broadcast(const string& group, const string& msg);
+void broadcast(const std::string& msg);
 
 
 /**
@@ -201,7 +201,7 @@ void handleHelp();
  * 加入群聊
  * 为当前用户启用权限
  */
-void handleJoinGroup(const string& group, const string& usr);
+void handleJoinGroup(const std::string& group, const std::string& usr);
 
 
 /**
@@ -240,10 +240,10 @@ void handleShowGroupUser();
  * 客户端与服务器断开连接指令
  * @param usr 要离线的用户名
  */
-void handleQuit(const string& usr);
+void handleQuit(const std::string& usr);
 
 /**
  * 根据用户名获取特定的Client结构体
  * @param usr 需要获取结构体的用户名
  */
-ClientInfo* getClient(const string& usr);
+ClientInfo* getClient(const std::string& usr);

@@ -54,9 +54,9 @@ ClientInfo* getClient(const string& usr) {
         return nullptr; // Return nullptr if user not found
     }
     ClientInfo& client = it->second;
-    if (client.in_group) {
-        sendToClient(client.socket, "You are already in a group.");
-        return nullptr;
-    }
     return &client;
+}
+
+void handleHelp() {
+    
 }

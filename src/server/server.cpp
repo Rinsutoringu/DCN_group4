@@ -64,7 +64,7 @@ void handleClient(SOCKET client_sock) {
     
     // 如果该用户合法，那么：
     // 给group群组中的全部客户端广播加入信息
-    broadcast(usr + " joined the group.", usr);
+    broadcast(usr + " joined the group.");
     // 给加入的那个客户端单独发送信息
     sendToClient(client_sock, "You joined group [" + grp + "] as " + usr + (group_owners[grp] == usr ? " (owner)." : "."));
 

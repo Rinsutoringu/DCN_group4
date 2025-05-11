@@ -29,7 +29,7 @@ void handleUserInput(const string& usr, const string& grp, const string& msg) {
     HANDLE_COMMAND("/help", handleHelp);
 
     // 如果用户的发言未匹配上方指令，那么按照发言处理
-    broadcast(grp, usr + ": " + msg);
+    broadcast(usr + ": " + msg);
 }
 
 // 创建群组
@@ -45,7 +45,6 @@ void handleCreateGroup(const string& group, const string& usr) {
         sendToClient(client->socket, "You are already in a group.");
         return;
     }
-
     // 将该用户结构体中in_group置true
     sendToClient(client->socket,"A group named " + group + " created successfully!");
     client->group = group;
@@ -54,7 +53,7 @@ void handleCreateGroup(const string& group, const string& usr) {
     group_owners[group] = usr;
 }
 
-
+// 加入群聊
 void handleJoinGroup(const string& group, const string& usr) {
 
     // 从clients获取当前连接的用户
@@ -67,16 +66,37 @@ void handleJoinGroup(const string& group, const string& usr) {
     client->group = group;
 }
 
-void handleLeaveGroup(const string& username) {
+// 你太菜了，退群吧
+void handleLeaveGroup(const string& usr) {
+    // 从clients获取当前连接的用户
+    lock_guard<mutex> lock(client_mutex);
+    ClientInfo* client = getClient(usr);
+    if (!client) return;
 
+    // 将该用户结构体中群名清空
+    sendToClient(client->socket, "You left the group " + client->group);
+    client->group = "";
 }
 
+// 展示所有连在服务器上的客户端
 void handleShowAllClient() {
 
+    for (const auto& pair : clients) {
+        const string& username = pair.first;
+        const ClientInfo& client = pair.second;
+        sendToClient(client.socket, "User: " + username + ", Group: " + client.group);
+    }
 }
 
-void handleShowUserStatus(const string& username) {
+// 当前状态
+void handleShowUserStatus(const string& usr) {
 
+    // 从clients获取当前连接的用户
+    lock_guard<mutex> lock(client_mutex);
+    ClientInfo* client = getClient(usr);
+    if (!client) return;
+
+    sendToClient(client->socket, "User: " + usr + ", Group: " + client->group);
 }
 
 void handleShowHistory() {
@@ -109,4 +129,8 @@ void handleQuit(const string& usr) {
 
 void handlehelp() {
 
+}
+
+void checkInactiveUsers() {
+    
 }
