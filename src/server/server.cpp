@@ -2,6 +2,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "server.h"
+#pragma comment(lib, "ws2_32.lib")
 
 // 定义全局变量
 std::map<std::string, std::set<std::string>> group_members;
@@ -10,8 +11,7 @@ std::map<std::string, ClientInfo> clients;
 std::mutex client_mutex;
 std::ofstream chatlog;
 
-
-#pragma comment(lib, "ws2_32.lib")
+// 使用std作用域
 using namespace std;
 
 // XOR加密函数
