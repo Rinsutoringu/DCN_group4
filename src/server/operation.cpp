@@ -27,6 +27,9 @@ void handleUserInput(const string& usr, const string& grp, const string& msg) {
     HANDLE_COMMAND("/dismiss", handleDismissGroup, usr);
     HANDLE_COMMAND("/quit", handleQuit, usr);
     HANDLE_COMMAND("/help", handleHelp);
+
+    // 如果用户的发言未匹配上方指令，那么按照发言处理
+    broadcast(grp, usr + ": " + msg);
 }
 
 void handleCreateGroup(const string& group, const string& username) {
@@ -40,7 +43,18 @@ void handleCreateGroup(const string& group, const string& username) {
 }
 
 void handleJoinGroup(const string& username) {
-
+    // 获取用户
+    auto it = clients.find(username);
+    if (it == clients.end()) {
+        cerr << "User " << username << " not found." << endl;
+        return;
+    }
+    ClientInfo& client = it->second;
+    if (client.group.empty()) {
+        cerr << "User " << username << " is not in a group." << endl;
+        return;
+    }
+    group_members[client.group].insert(client.username);
 }
 
 void handleLeaveGroup(const string& username) {

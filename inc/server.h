@@ -35,20 +35,24 @@ struct ClientInfo
     // 客户端socket
     SOCKET socket;
     // 用户名
-    std::string usr;
+    std::string username;
     // 用户所在群名
     std::string group;
     // 用户是否被塞口球
     bool muted = false;
+    // 用户是否在群里
+    bool in_group = false;
     // 与服务器的最后连接时间
     time_t last_activity;
     // 是否是管理员
     bool is_admin = false;
+    
+    // 结构体构造函数
+    ClientInfo(SOCKET sock, const std::string& usr, const std::string& grp_name, bool mute, time_t last_act)
+        : socket(sock), username(usr), group(grp_name), muted(mute), last_activity(last_act) {}
 };
 
 /*#####################声明全局变量#####################*/
-// 群组成员
-extern std::map<std::string, std::set<std::string>> group_members;
 // 群组拥有者
 extern std::map<std::string, std::string> group_owners;
 // 当前连接的用户列表
@@ -81,7 +85,7 @@ void sendToGroup(const std::string& msg);
  * 发送消息给所有客户端
  * @param msg 发送的消息
  */
-void broadcast(const std::string& msg);
+void broadcast(const string& group, const string& msg);
 
 
 /**
