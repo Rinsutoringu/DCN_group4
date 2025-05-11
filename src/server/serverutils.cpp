@@ -4,7 +4,6 @@ using namespace std;
 
 bool is_Owner(const std::string& username) {
     // 判断用户是否是群组持有者
-    lock_guard<mutex> lock(client_mutex);
     ClientInfo* client = getClient(username);
     if (!client) return false;
 
@@ -18,7 +17,7 @@ bool is_Owner(const std::string& username) {
 
 // 验证用户输入合法性
 void validateUserInput(const string& usr, const string& grp, SOCKET client_sock) {
-    lock_guard<mutex> lock(client_mutex);
+
     if (usr.empty() || grp.empty())
     {
         sendToClient(client_sock, "Error: Username and group cannot be empty.");
@@ -41,7 +40,7 @@ void sendToClient(SOCKET sock, const string& msg) {
 // 广播
 void broadcast(const string& msg) {
     // 进程锁
-    lock_guard<mutex> lock(client_mutex);
+
     // 拼接字符串
     string timestamped_msg = getTimestamp() + " " + msg;
     // 所有在服务器的客户端都应接收到广播
@@ -52,7 +51,7 @@ void broadcast(const string& msg) {
 
 // 正常的群聊内部广播
 void sendToGroup(const std::string& group, const std::string& msg) {
-    lock_guard<mutex> lock(client_mutex);
+
     // 拼接字符串
     string timestamped_msg = getTimestamp() + " " + msg;
     // 所有在群组中的客户端都应接收到广播
@@ -74,7 +73,10 @@ ClientInfo* getClient(const string& usr) {
 }
 
 int muteCheck(const std::string& usr) {
-    lock_guard<mutex> lock(client_mutex);
+    // DEBUG
+
+    // DEBUG
+    cerr << "检查用户禁言状态: 获取用户" << endl;
     ClientInfo* client = getClient(usr);
     if (!client) return -1; // 没找到套接字返回-1
     if (client->muted) return 1; // 被禁言了是true

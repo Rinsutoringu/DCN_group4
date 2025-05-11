@@ -5,13 +5,17 @@ using namespace std;
 
 // 处理用户输入
 void handleUserInput(const string& usr, const string& grp, const string& msg) {
-    lock_guard<mutex> lock(client_mutex);
+    cerr << "handleUserInput" << endl;
+    cerr << "线程 " << this_thread::get_id() << " 尝试获取锁" << endl;
+lock_guard<recursive_mutex> lock(client_mutex);
+cerr << "线程 " << this_thread::get_id() << " 成功获取锁" << endl;
     // 传入用户名和群名
 
     // 根据用户的输入调用不同函数
     // 如: /kick
     // 使用宏定义来自由化处理逻辑
-    broadcast("User " + usr + " sent a message: " + msg);
+    // DEBUG
+    cerr << "准备处理用户指令" << endl;
     HANDLE_COMMAND("/create", handleCreateGroup, grp, usr);
     HANDLE_COMMAND("/join", handleJoinGroup, grp, usr);
     HANDLE_COMMAND("/leave", handleLeaveGroup, usr);
@@ -27,23 +31,32 @@ void handleUserInput(const string& usr, const string& grp, const string& msg) {
     HANDLE_COMMAND("/help", handleHelp, usr);
 
     // 如果用户的发言未匹配上方指令，那么按照发言处理
-
+    // DEBUG
+    cerr << "未发现用户指令，开始判断权限" << endl;
     // 判断用户有没有被禁言
-    {
-        lock_guard<mutex> lock(client_mutex);
-        ClientInfo* client = getClient(usr);
-        int muteStatus = muteCheck(client->username);
-        sendToClient(client->socket, "You are muted.");
-        if (muteStatus != 0) return;
-    }
+    cerr << "01" << endl;
+    cerr << "02" << endl;
+    ClientInfo* client = getClient(usr);
+    cerr << "03" << endl;
+    int muteStatus = muteCheck(client->username);
+    cerr << "04" << endl;
+    sendToClient(client->socket, "You are muted.");
+    // DEBUG
+    cerr << "发现用户被禁言，发言终止" << endl;
+    if (muteStatus != 0) return;
 
+
+    // DEBUG
+    cerr << "用户发言未受限，准备写入log" << endl;
     // 存入chatlog文件
     {
-        lock_guard<mutex> lock(client_mutex);
+
         sendToGroup(grp, usr + ": " + msg);
         chatlog << getTimestamp() + " " + usr + ": " + msg << endl;
         if (chatlog.fail()) cerr << "Error writing to chatlog file." << endl;
     }
+    // DEBUG
+    cerr << "chatlog写入完成" << endl;
 }
 
 
@@ -51,7 +64,7 @@ void handleCreateGroup(const string& group, const string& usr) {
     // 创建群组
 
     // 从clients获取当前连接的用户
-    lock_guard<mutex> lock(client_mutex);
+
     ClientInfo* client = getClient(usr);
     if (!client) return;
 
@@ -73,7 +86,6 @@ void handleJoinGroup(const string& group, const string& usr) {
     // 加入群聊
 
     // 从clients获取当前连接的用户
-    lock_guard<mutex> lock(client_mutex);
     ClientInfo* client = getClient(usr);
     if (!client) return;
 
@@ -87,7 +99,7 @@ void handleLeaveGroup(const string& usr) {
     // 你太菜了，退群吧
 
     // 从clients获取当前连接的用户
-    lock_guard<mutex> lock(client_mutex);
+
     ClientInfo* client = getClient(usr);
     if (!client) return;
 
@@ -112,7 +124,6 @@ void handleShowUserStatus(const string& usr) {
     // 当前状态
 
     // 从clients获取当前连接的用户
-    lock_guard<mutex> lock(client_mutex);
     ClientInfo* client = getClient(usr);
     if (!client) return;
 
@@ -121,7 +132,7 @@ void handleShowUserStatus(const string& usr) {
 
 void handleShowHistory(ofstream& chatlog, const string& usr) {
     // 从已打开的chatlog对象获取最后20行，不足20行有多少就输出多少
-    lock_guard<mutex> lock(client_mutex);
+
     ClientInfo* client = getClient(usr);
     if (!client) return;
 
@@ -162,7 +173,6 @@ void handleShowGroupUser() {
 
 void handleMuteUser(const string& usr) {
     // 禁言用户
-    lock_guard<mutex> lock(client_mutex);
     ClientInfo* client = getClient(usr);
     if (!client) return;
 
@@ -172,7 +182,6 @@ void handleMuteUser(const string& usr) {
 
 void handleUnmuteUser(const string& usr) {
     // 解禁用户
-    lock_guard<mutex> lock(client_mutex);
     ClientInfo* client = getClient(usr);
     if (!client) return;
 
@@ -182,7 +191,6 @@ void handleUnmuteUser(const string& usr) {
 
 void handleKickGroup(const string& group, const string& usr) {
     // 踢出用户
-    lock_guard<mutex> lock(client_mutex);
     ClientInfo* client = getClient(usr);
     if (!client) return;
 
@@ -196,7 +204,6 @@ void handleKickGroup(const string& group, const string& usr) {
 
 void handleDismissGroup(const string& usr) {
     // 解散群组
-    lock_guard<mutex> lock(client_mutex);
     ClientInfo* client = getClient(usr);
     if (!client) return;
 
@@ -231,7 +238,7 @@ void handleDismissGroup(const string& usr) {
 
 void handleQuit(const string& usr) {
     // 客户端发送退出命令
-    lock_guard<mutex> lock(client_mutex);
+
     ClientInfo* client = getClient(usr);
     if (!client) return;
 
@@ -244,7 +251,7 @@ void handleQuit(const string& usr) {
 }
 
 void handleHelp(const string& usr) {
-    lock_guard<mutex> lock(client_mutex);
+
     ClientInfo* client = getClient(usr);
     if (!client) return;
 
@@ -264,7 +271,10 @@ void checkInactiveUsers() {
     while (true) {
         {
             // 锁定客户端列表
-            lock_guard<mutex> lock(client_mutex);
+            cerr << "checkInactiveUsers" << endl;
+            cerr << "线程 " << this_thread::get_id() << " 尝试获取锁" << endl;
+            lock_guard<recursive_mutex> lock(client_mutex);
+            cerr << "线程 " << this_thread::get_id() << " 成功获取锁" << endl;
             for (auto it = clients.begin(); it != clients.end();) {
                 if (it->second.last_activity < time(nullptr) - INACTIVITY_TIMEOUT) {
                     sendToClient(it->second.socket, "You have been inactive for too long. You will be disconnected.");

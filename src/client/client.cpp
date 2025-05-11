@@ -173,11 +173,6 @@ void ChatClient::start() {
     handleConnection();
 }
 
-// bool connStatus() {
-//     lock_guard<mutex> lock(client_mutex);
-//     return clients.count(username) > 0;
-// }
-
 int main(int argc, char** argv) {
     if (argc != 3) {
         cout << "Usage: client <server IP> <port>" << endl;

@@ -10,7 +10,7 @@ using namespace std;
 // 定义全局变量
 map<std::string, std::string> group_owners;
 map<std::string, ClientInfo> clients;
-mutex client_mutex;
+recursive_mutex client_mutex;
 ofstream chatlog;
 
 
@@ -40,7 +40,9 @@ void handleClient(SOCKET client_sock) {
     char buffer[1024];
     // 获取客户端报文并进行处理
     {
-        lock_guard<mutex> lock(client_mutex);
+        cerr << "线程 " << this_thread::get_id() << " 尝试获取锁" << endl;
+        lock_guard<recursive_mutex> lock(client_mutex);
+        cerr << "线程 " << this_thread::get_id() << " 成功获取锁" << endl;
         int len = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
         if (len <= 0) return;
         istringstream iss(xorCipher(std::string(buffer, len))); // 解密
@@ -70,13 +72,17 @@ void handleClient(SOCKET client_sock) {
 
     /*#################核心指令处理逻辑#################*/
     while (true) {
+        // DEBUG
+        cerr << "等待用户输入..." << endl;
         handleUserInput(usr, grp, msg);
         sendToClient(client_sock, "You sent a message: " + msg);
     }
 
     // 退出处置
     {
-        lock_guard<mutex> lock(client_mutex);
+        cerr << "线程 " << this_thread::get_id() << " 尝试获取锁" << endl;
+lock_guard<recursive_mutex> lock(client_mutex);
+cerr << "线程 " << this_thread::get_id() << " 成功获取锁" << endl;
         clients.erase(usr);
     }
     closesocket(client_sock);

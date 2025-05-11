@@ -59,7 +59,7 @@ extern std::map<std::string, std::string> group_owners;
 // 当前连接的用户列表
 extern std::map<std::string, ClientInfo> clients;
 // 保护客户端列表的互斥锁
-extern std::mutex client_mutex;
+extern std::recursive_mutex client_mutex;
 // 聊天记录文件
 extern std::ofstream chatlog;
 
