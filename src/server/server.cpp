@@ -36,20 +36,11 @@ string getTimestamp() {
 void handleClient(SOCKET client_sock) {
     // 初始化客户端连接
     cerr << "客户端线程启动成功" << endl;
-    string usr, grp, msg;
-    char buffer[1024];
 
-    // 获取客户端报文并进行处理
-    {
-        cerr << "线程 " << this_thread::get_id() << " 尝试获取锁" << endl;
-        lock_guard<recursive_mutex> lock(client_mutex);
-        cerr << "线程 " << this_thread::get_id() << " 成功获取锁" << endl;
-        int len = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
-        if (len <= 0) return;
-        istringstream iss(xorCipher(std::string(buffer, len))); // 解密
-        iss >> usr >> grp; // 流式切割报文
-        getline(iss, msg);
-        if (!msg.empty() && msg[0] == ' ') msg = msg.substr(1); // 去掉消息前面的空格
+    string usr, grp, msg;
+    if (!getSocketMessage(client_sock, usr, grp, msg)) {
+        cerr << "客户端报文处理失败" << endl;
+        return;
     }
     cerr << "客户端报文处理完成" << endl;
 
@@ -72,8 +63,12 @@ void handleClient(SOCKET client_sock) {
     // 死循环处理用户输入
     while (true) {
         cerr << "等待用户输入..." << endl;
+        if (!getSocketMessage(client_sock, usr, grp, msg)) {
+            cerr << "客户端报文处理失败" << endl;
+            return;
+        }
         handleUserInput(usr, grp, msg, client_sock);
-        sendToClient(client_sock, "You sent a message: " + msg);
+        // sendToClient(client_sock, "You sent a message: " + msg);
     }
 
     // 退出处理逻辑

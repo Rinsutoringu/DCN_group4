@@ -121,7 +121,7 @@ void ChatClient::handleConnection() {
         }
 
         // 发送消息到服务器
-        sendMessage(input);
+        sendMessage(username + " " + this->group_name);
     }
 
     
@@ -180,7 +180,7 @@ void ChatClient::start() {
             continue;
         }
         string cmd = input.substr(0, space_pos);
-        group = input.substr(space_pos + 1);
+        this->group_name = input.substr(space_pos + 1);
         if (cmd != "/create" && cmd != "/join") {
             lock_guard<mutex> lock(cout_mutex);
             cerr << "Invalid command. Usage: /create <group> or /join <group>\n";
@@ -189,7 +189,7 @@ void ChatClient::start() {
 
         break;
     }
-    sendMessage(username + " " + group);
+    sendMessage(username + " " + this->group_name);
     handleConnection();
 }
 

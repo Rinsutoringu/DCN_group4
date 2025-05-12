@@ -43,6 +43,8 @@ private:
     std::queue<std::string> input_queue;
     // 标志位，表示是否退出
     bool exit_flag = false;
+    // 群组名称
+    std::string group_name;
 
     /**
      * XOR加密

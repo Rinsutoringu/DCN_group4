@@ -1,4 +1,5 @@
 #include "server.h"
+
 // 使用std作为命名空间
 using namespace std;
 
@@ -56,24 +57,26 @@ void broadcast(const string& msg) {
 
 // 正常的群聊内部广播
 void sendToGroup(const std::string& usr, const std::string& group, const std::string& msg) {
+    // 去除空格和不可见字符
+    string trimmed_msg = msg;
+    trimmed_msg.erase(remove_if(trimmed_msg.begin(), trimmed_msg.end(), ::isspace), trimmed_msg.end());
 
     // 判断是否为空
-    if (msg.empty()) return;
+    if (trimmed_msg.empty()) return;
+
     // 判断是否被禁言
     ClientInfo* client = getClient(usr);
     int muteStatus = muteCheck(client->username);
     if (muteStatus != 0) return;
-    
+
     // 打印到日志
     if (msg[0] == '/') return;
     chatlog << getTimestamp() + " " + usr + ": " + msg << endl;
     if (chatlog.fail()) cerr << "Error writing to chatlog file." << endl;
-    // DEBUG
     cerr << "chatlog写入完成" << endl;
 
     // 拼接字符串
     string timestamped_msg = getTimestamp() + " " + msg;
-    // 所有在群组中的客户端都应接收到广播
     for (const auto& [username, client] : clients) {
         if (client.group == group) sendToClient(client.socket, timestamped_msg);
     }
@@ -98,4 +101,20 @@ int muteCheck(const std::string& usr) {
     if (!client) return -1; // 没找到套接字返回-1
     if (client->muted) return 1; // 被禁言了是true
     return 0;
+}
+
+bool getSocketMessage(SOCKET client_sock, string& usr, string& grp, string& msg) {
+    char buffer[1024];
+    int len = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
+    if (len <= 0) return false; // 客户端断开连接或发生错误
+
+    // 解密并解析消息
+    istringstream iss(xorCipher(std::string(buffer, len)));
+    iss >> usr >> grp; // 流式切割报文
+    getline(iss, msg);
+
+    // 去掉消息前面的空格
+    if (!msg.empty() && msg[0] == ' ') msg = msg.substr(1);
+
+    return true;
 }

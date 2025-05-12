@@ -14,6 +14,7 @@
 #include <fstream>
 #include <exception>
 #include <deque>
+#include <algorithm>
 
 #define XOR_KEY 0xAB
 #define MAX_CLIENTS 100
@@ -262,3 +263,5 @@ ClientInfo* getClient(const std::string& usr);
  * @return 如果被禁言返回1，没禁言返回0，出错返回-1
  */
 int muteCheck(const std::string& usr);
+
+bool getSocketMessage(SOCKET client_sock, std::string& usr, std::string& grp, std::string& msg);

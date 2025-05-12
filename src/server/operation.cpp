@@ -34,8 +34,8 @@ void handleUserInput(const string& usr, const string& grp, const string& msg, SO
     HANDLE_COMMAND("/quit", handleQuit, usr);
     HANDLE_COMMAND("/help", handleHelp, usr);
 
-        // 如果用户的发言未匹配上方指令，那么按照普通消息处理
-        sendToGroup(usr, grp, msg);
+    // 如果用户的发言未匹配上方指令，那么按照普通消息处理
+    sendToGroup(usr, grp, msg);
 
 }
 
