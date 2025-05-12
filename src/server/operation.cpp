@@ -244,15 +244,15 @@ void handleHelp(const string& usr) {
     ClientInfo* client = getClient(usr);
     if (!client) return;
 
-    sendToClient(client->socket, "Available commands:");
-    sendToClient(client->socket, "/history - Show chat history");
-    sendToClient(client->socket, "/kick <user> - Kick a user from the group");
-    sendToClient(client->socket, "/mute <user> - Mute a user");
-    sendToClient(client->socket, "/unmute <user> - Unmute a user");
-    sendToClient(client->socket, "/create <group> - Create a new group");
-    sendToClient(client->socket, "/join <group> - Join an existing group");
-    sendToClient(client->socket, "/leave - Leave the current group");
-    sendToClient(client->socket, "/help - Show this help message");
+    sendToClient(client->socket, "Available commands:\n");
+    sendToClient(client->socket, "/history - Show chat history\n");
+    sendToClient(client->socket, "/kick <user> - Kick a user from the group\n");
+    sendToClient(client->socket, "/mute <user> - Mute a user\n");
+    sendToClient(client->socket, "/unmute <user> - Unmute a user\n");
+    sendToClient(client->socket, "/create <group> - Create a new group\n");
+    sendToClient(client->socket, "/join <group> - Join an existing group\n");
+    sendToClient(client->socket, "/leave - Leave the current group\n");
+    sendToClient(client->socket, "/help - Show this help message\n");
 }
 
 
