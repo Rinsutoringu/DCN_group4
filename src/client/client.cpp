@@ -121,7 +121,7 @@ void ChatClient::handleConnection() {
         }
 
         // 发送消息到服务器
-        sendMessage(username + " " + this->group_name);
+        sendMessage(username + " " + this->group_name + " " + input);
     }
 
     
@@ -189,17 +189,18 @@ void ChatClient::start() {
 
         break;
     }
-    sendMessage(username + " " + this->group_name);
+    sendMessage(username + " " + this->group_name );
     handleConnection();
 }
 
 void ChatClient::getMessage() {
     string input;
     while (true) {
+        cout << "Enter a message: ";
         // 为输入消息创建锁
         {
             lock_guard<mutex> lock(cout_mutex);
-            cout << "Enter a message: ";
+            
         }
         getline(cin, input);
 
