@@ -4,70 +4,39 @@
 using namespace std;
 
 // 处理用户输入
-void handleUserInput(const string& usr, const string& grp, const string& msg) {
-    cerr << "handleUserInput 开始阻塞式处理指令" << endl;
+void handleUserInput(const string& usr, const string& grp, const string& msg, SOCKET socket) {
+    // 传入用户名和群名
 
-    while (true) {
-        cerr << "线程 " << this_thread::get_id() << " 尝试获取锁" << endl;
-        lock_guard<recursive_mutex> lock(client_mutex);
-        cerr << "线程 " << this_thread::get_id() << " 成功获取锁" << endl;
-
-        // 检查用户是否仍然在线
-        ClientInfo* client = getClient(usr);
-        if (!client) {
-            cerr << "用户 " << usr << " 已断开连接，退出指令处理循环" << endl;
-            break;
+    // 根据用户的输入调用不同函数
+    // 如: /kick
+    // 使用宏定义来自由化处理逻辑
+    // DEBUG
+    
+    // 遍历sockets
+    string username;
+    for (const auto& [key, client] : clients) {
+        if (client.socket == socket) {
+            username = client.username;
         }
-
-        // 检查是否有新消息
-        if (msg.empty()) {
-            cerr << "未收到新消息，继续等待..." << endl;
-            this_thread::sleep_for(chrono::milliseconds(100)); // 等待 100 毫秒
-            continue;
-        }
-
-        // 处理用户指令
-        cerr << "准备处理用户指令: " << msg << endl;
-        HANDLE_COMMAND("/create", handleCreateGroup, grp, usr);
-        HANDLE_COMMAND("/join", handleJoinGroup, grp, usr);
-        HANDLE_COMMAND("/leave", handleLeaveGroup, usr);
-        HANDLE_COMMAND("/list_all_users", handleShowAllClient);
-        HANDLE_COMMAND("/userstatus", handleShowUserStatus, usr);
-        HANDLE_COMMAND("/history", handleShowHistory, chatlog, usr);
-        HANDLE_COMMAND("/groupuser", handleShowGroupUser);
-        HANDLE_COMMAND("/mute", handleMuteUser, usr);
-        HANDLE_COMMAND("/unmute", handleUnmuteUser, usr);
-        HANDLE_COMMAND("/kick", handleKickGroup, grp, usr);
-        HANDLE_COMMAND("/dismiss", handleDismissGroup, usr);
-        HANDLE_COMMAND("/quit", handleQuit, usr);
-        HANDLE_COMMAND("/help", handleHelp, usr);
+    }
+    cerr << "准备处理用户指令" << endl;
+    HANDLE_COMMAND("/create", handleCreateGroup, grp, usr);
+    HANDLE_COMMAND("/join", handleJoinGroup, grp, usr);
+    HANDLE_COMMAND("/leave", handleLeaveGroup, usr);
+    HANDLE_COMMAND("/list_all_users", handleShowAllClient);
+    HANDLE_COMMAND("/userstatus", handleShowUserStatus, usr);
+    HANDLE_COMMAND("/history", handleShowHistory, chatlog, usr);
+    HANDLE_COMMAND("/groupuser", handleShowGroupUser);
+    HANDLE_COMMAND("/mute", handleMuteUser, usr);
+    HANDLE_COMMAND("/unmute", handleUnmuteUser, usr);
+    HANDLE_COMMAND("/kick", handleKickGroup, grp, usr, username);
+    HANDLE_COMMAND("/dismiss", handleDismissGroup, usr);
+    HANDLE_COMMAND("/quit", handleQuit, usr);
+    HANDLE_COMMAND("/help", handleHelp, usr);
 
         // 如果用户的发言未匹配上方指令，那么按照普通消息处理
-        if (msg[0] != '/') {
-            cerr << "未发现用户指令，开始判断权限" << endl;
+        sendToGroup(usr, grp, msg);
 
-            // 判断用户是否被禁言
-            int muteStatus = muteCheck(usr);
-            if (muteStatus != 0) {
-                sendToClient(client->socket, "You are muted.");
-                cerr << "用户 " << usr << " 被禁言，发言终止" << endl;
-                continue;
-            }
-
-            // 将消息广播到群组并写入日志
-            sendToGroup(grp, usr + ": " + msg);
-            chatlog << getTimestamp() + " " + usr + ": " + msg << endl;
-            if (chatlog.fail()) {
-                cerr << "Error writing to chatlog file." << endl;
-            }
-            cerr << "消息已广播并写入日志" << endl;
-        }
-
-        // 清空消息内容，等待下一条消息
-        cerr << "等待下一条消息..." << endl;
-    }
-
-    cerr << "handleUserInput 结束阻塞式处理指令" << endl;
 }
 
 
@@ -201,16 +170,24 @@ void handleUnmuteUser(const string& usr) {
     sendToClient(client->socket, "You have been unmuted.");
 }
 
-void handleKickGroup(const string& group, const string& usr) {
+void handleKickGroup(const string& group, const string& usr, const string& admin) {
     // 踢出用户
-    ClientInfo* client = getClient(usr);
-    if (!client) return;
 
-    if (client->group != group) {
-        sendToGroup(client->group, "User " + usr + " is not in the group " + group + ".");
+    ClientInfo* adminclient = getClient(admin);
+    if (!adminclient) return;
+    if (!is_Owner(adminclient->username)) {
+        sendToClient(adminclient->socket, "You are not the owner of the group " + group + ".");
         return;
     }
-    sendToGroup(group, "User " + usr + " has been kicked from the group.");
+
+    ClientInfo* client = getClient(usr);
+    if (!client) return;
+    if (client->group != group) {
+        sendToClient(client->socket, "You are not in the group " + group + ".");
+        return;
+    }
+
+    sendToGroup(admin, group, "User " + usr + " has been kicked from the group.");
     client->group = "";
 }
 
@@ -237,7 +214,7 @@ void handleDismissGroup(const string& usr) {
         return;
     }
     // 发送解散群组的消息
-    sendToGroup(group, "Group " + group + " has been dismissed.");
+    sendToGroup(usr, group, "Group " + group + " has been dismissed.");
     // 移除群组的拥有者
     group_owners.erase(group);
     // 移除所有成员
@@ -256,7 +233,7 @@ void handleQuit(const string& usr) {
 
     string group = client->group;
     if (group != "") {
-        sendToGroup(group, "User " + usr + " has left the group " + group + ".");
+        sendToGroup(usr, group, "User " + usr + " has left the group " + group + ".");
     }
     clients.erase(usr);
     closesocket(client->socket);

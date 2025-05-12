@@ -55,15 +55,27 @@ void broadcast(const string& msg) {
 }
 
 // 正常的群聊内部广播
-void sendToGroup(const std::string& group, const std::string& msg) {
+void sendToGroup(const std::string& usr, const std::string& group, const std::string& msg) {
+
+    // 判断是否为空
+    if (msg.empty()) return;
+    // 判断是否被禁言
+    ClientInfo* client = getClient(usr);
+    int muteStatus = muteCheck(client->username);
+    if (muteStatus != 0) return;
+    
+    // 打印到日志
+    if (msg[0] == '/') return;
+    chatlog << getTimestamp() + " " + usr + ": " + msg << endl;
+    if (chatlog.fail()) cerr << "Error writing to chatlog file." << endl;
+    // DEBUG
+    cerr << "chatlog写入完成" << endl;
 
     // 拼接字符串
     string timestamped_msg = getTimestamp() + " " + msg;
     // 所有在群组中的客户端都应接收到广播
     for (const auto& [username, client] : clients) {
-        if (client.group == group) {
-            sendToClient(client.socket, timestamped_msg);
-        }
+        if (client.group == group) sendToClient(client.socket, timestamped_msg);
     }
 }
 

@@ -74,8 +74,11 @@ void sendToClient(SOCKET sock, const std::string& msg);
 
 /**
  * 发送信息给有权限的客户端
+ * @param usr 发送者(判断禁言)
+ * @param group 群组名
+ * @param msg 发送的消息
  */
-void sendToGroup(const std::string& group, const std::string& msg);
+void sendToGroup(const std::string& usr, const std::string& group, const std::string& msg);
 
 
 /**
@@ -132,9 +135,12 @@ bool is_Owner(const std::string& usr);
 
 /**
  * 处理用户输入
+ * @param usr 用户名
+ * @param grp 群组名
  * @param msg 用户输入的消息
+ * @param client_sock 客户端socket
  */
-void handleUserInput(const std::string& usr, const std::string& grp, const std::string& msg);
+void handleUserInput(const std::string& usr, const std::string& grp, const std::string& msg, SOCKET socket);
 
 
 /**
@@ -151,8 +157,9 @@ void handleCreateGroup(const std::string& group, const std::string& usr);
  * 处理踢人请求
  * 踢完后对应的人失去权限
  * @param usr 要踢谁？
+ * @param admin 执行人
  */
-void handleKickGroup(const std::string& group, const std::string& usr);
+void handleKickGroup(const std::string& group, const std::string& usr, const std::string& admin);
 
 
 /**

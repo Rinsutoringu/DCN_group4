@@ -34,10 +34,11 @@ string getTimestamp() {
 
 
 void handleClient(SOCKET client_sock) {
-    // DEBUG
+    // 初始化客户端连接
     cerr << "客户端线程启动成功" << endl;
     string usr, grp, msg;
     char buffer[1024];
+
     // 获取客户端报文并进行处理
     {
         cerr << "线程 " << this_thread::get_id() << " 尝试获取锁" << endl;
@@ -48,41 +49,38 @@ void handleClient(SOCKET client_sock) {
         istringstream iss(xorCipher(std::string(buffer, len))); // 解密
         iss >> usr >> grp; // 流式切割报文
         getline(iss, msg);
-        if(!msg.empty() && msg[0] == ' ') msg = msg.substr(1); // 去掉消息前面的空格
+        if (!msg.empty() && msg[0] == ' ') msg = msg.substr(1); // 去掉消息前面的空格
     }
-    // DEBUG
     cerr << "客户端报文处理完成" << endl;
 
-    validateUserInput(usr, grp, client_sock); // 验证合法性 这真的不是GPT写的，这是我手敲的
-
-    // DEBUG
+    // 验证用户输入合法性
+    validateUserInput(usr, grp, client_sock);
     cerr << "合法性验证完成" << endl;
+
+    // 添加用户到客户端列表
     {
-        // 完成合法性验证，将用户信息添加到客户端列表
         clients[usr] = {client_sock, usr, grp, false, time(nullptr)};
-        // 如果群组没有拥有者，则第一个加入者将成为拥有者
         if (group_owners.count(grp) == 0) group_owners[grp] = usr;
     }
-    // DEBUG
     cerr << "客户端列表添加完成" << endl;
-    sendToGroup(grp, usr + " joined the group.");
+
+    // 通知群组和客户端
+    sendToGroup(usr, grp, usr + " joined the group.");
     sendToClient(client_sock, "You joined group [" + grp + "] as " + usr + (group_owners[grp] == usr ? " (owner)." : "."));
-    // DEBUG
     cerr << "已发送连接通告" << endl;
 
-    /*#################核心指令处理逻辑#################*/
+    // 死循环处理用户输入
     while (true) {
-        // DEBUG
         cerr << "等待用户输入..." << endl;
-        handleUserInput(usr, grp, msg);
+        handleUserInput(usr, grp, msg, client_sock);
         sendToClient(client_sock, "You sent a message: " + msg);
     }
 
-    // 退出处置
+    // 退出处理逻辑
     {
         cerr << "线程 " << this_thread::get_id() << " 尝试获取锁" << endl;
-lock_guard<recursive_mutex> lock(client_mutex);
-cerr << "线程 " << this_thread::get_id() << " 成功获取锁" << endl;
+        lock_guard<recursive_mutex> lock(client_mutex);
+        cerr << "线程 " << this_thread::get_id() << " 成功获取锁" << endl;
         clients.erase(usr);
     }
     closesocket(client_sock);
